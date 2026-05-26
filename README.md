@@ -25,10 +25,10 @@ The goal is to build a resume-ready AI/SDE project that is more than a chatbot. 
 ## Current Status
 
 Day 1:
-- [ ] Backend FastAPI skeleton
-- [ ] Health check API
-- [ ] Frontend Next.js skeleton
-- [ ] Frontend-to-backend connection
+- [x] Backend FastAPI skeleton
+- [x] Health check API
+- [x] Frontend Next.js skeleton
+- [x] Frontend-to-backend connection
 
 ## Planned Features
 
