@@ -41,6 +41,12 @@ Day 1:
 - [x] Frontend Next.js skeleton
 - [x] Frontend-to-backend connection
 
+Day 2:
+- [x] Raw TMDB files are placed in backend/data/raw/
+- [x] python -m app.scripts.ingest_movies runs successfully
+- [x] movies_clean.csv is generated
+- [x] movie_documents.jsonl is generated
+- [x] python -m app.scripts.validate_movies runs successfully
 ## Planned Features
 
 - Movie metadata processing
