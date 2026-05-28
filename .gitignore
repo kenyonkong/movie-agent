@@ -16,8 +16,10 @@ out/
 Thumbs.db
 
 # Data
-backend/data/raw/
-backend/data/processed/
+backend/data/raw/*
+backend/data/processed/*
+!backend/data/raw/.gitkeep
+!backend/data/processed/.gitkeep
 backend/chroma_db/
 
 # Logs

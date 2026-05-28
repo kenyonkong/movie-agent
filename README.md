@@ -22,6 +22,17 @@ The goal is to build a resume-ready AI/SDE project that is more than a chatbot. 
 - Embeddings: OpenAI or local embedding model
 - LLM: Used for explanation, not for ungrounded movie generation
 
+## Dataset Setup
+
+This project currently uses the TMDB 5000 Movie Dataset.
+
+Raw files:
+
+```text
+backend/data/raw/movies_metadata.csv
+backend/data/raw/credits.csv
+```
+
 ## Current Status
 
 Day 1:
