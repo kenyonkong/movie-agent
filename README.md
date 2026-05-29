@@ -47,6 +47,16 @@ Day 2:
 - [x] movies_clean.csv is generated
 - [x] movie_documents.jsonl is generated
 - [x] python -m app.scripts.validate_movies runs successfully
+
+Day 3:
+- [x] Embedding service abstraction
+- [x] Local embedding support
+- [x] Optional OpenAI embedding support
+- [x] Chroma vector store
+- [x] Vector database build script
+- [x] Command-line semantic search
+- [x] Retrieval smoke test
+- [x] Search latency benchmark
 ## Planned Features
 
 - Movie metadata processing
