@@ -57,6 +57,14 @@ Day 3:
 - [x] Command-line semantic search
 - [x] Retrieval smoke test
 - [x] Search latency benchmark
+
+Day 4:
+- [x] Recommendation request/response schemas
+- [x] Recommender service layer
+- [x] POST /recommend API
+- [x] Recommendation debug endpoint
+- [x] API latency measurement
+- [x] Manual tests through FastAPI docs
 ## Planned Features
 
 - Movie metadata processing

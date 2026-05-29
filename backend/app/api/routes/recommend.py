@@ -1,0 +1,44 @@
+from fastapi import APIRouter, HTTPException
+
+from app.db.schemas import RecommendRequest, RecommendResponse
+from app.services.recommender import RecommenderService
+
+router = APIRouter(prefix="/recommend", tags=["recommendation"])
+
+recommender = RecommenderService() # global recommender instance avoids repeated initialization overhead.
+
+@router.post("", response_model=RecommendResponse)
+def recommend(request: RecommendRequest) -> RecommendResponse:
+    """
+    Recommend movies from a natural-language user query.
+
+    Day 4 version:
+    - Uses semantic vector search
+    - Returns top-k candidates
+    - Includes simple non-LLM explanations
+    """
+    try:
+        return recommender.recommend(
+            user_id=request.user_id,
+            query=request.query,
+            top_k=request.top_k,
+        )
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected recommendation error: {error}",
+        ) from error
+    
+
+@router.get("/debug")
+def recommend_debug() -> dict:
+    """
+    Debug endpoint to check if the recommender service is working without needing a full request body.
+    """
+    return {
+        "vector_store_count": recommender.vector_store.count(),
+        "message": "Recommendation service is ready.",
+    }

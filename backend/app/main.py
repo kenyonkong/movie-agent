@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health
+from app.api.routes import health, recommend
 from app.core.config import settings
 
 app = FastAPI(
@@ -20,6 +20,7 @@ app.add_middleware(
 ) # Allow CORS for frontend development
 
 app.include_router(health.router)
+app.include_router(recommend.router)
 
 
 @app.get("/")
@@ -28,4 +29,5 @@ def root():
         "message": "Welcome to Movie Agent API", 
         "docs": "/docs", 
         "health": "/health", 
+        "recommend": "/recommend"
     }
