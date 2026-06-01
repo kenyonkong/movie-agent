@@ -65,6 +65,15 @@ Day 4:
 - [x] Recommendation debug endpoint
 - [x] API latency measurement
 - [x] Manual tests through FastAPI docs
+
+Day 5:
+- [x] Frontend API client for /recommend
+- [x] TypeScript recommendation types
+- [x] SearchBar component
+- [x] MovieCard component
+- [x] RecommendationList component
+- [x] Loading and error states
+- [x] Full frontend-to-backend recommendation flow
 ## Planned Features
 
 - Movie metadata processing

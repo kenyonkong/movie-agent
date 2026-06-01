@@ -1,3 +1,5 @@
+import type { RecommendRequest, RecommendResponse } from "@/types/movie";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
@@ -16,6 +18,37 @@ export async function getHealth(): Promise<HealthResponse> {
 
   if (!response.ok) {
     throw new Error(`Backend health check failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export async function recommendMovies(
+  requestBody: RecommendRequest
+): Promise<RecommendResponse> {
+  const response = await fetch(`${API_BASE_URL}/recommend`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    let errorMessage = `Recommendation request failed: ${response.status}`;
+
+    try {
+      const errorBody = await response.json();
+      if (errorBody.detail) {
+        errorMessage = Array.isArray(errorBody.detail)
+        ? JSON.stringify(errorBody.detail)
+        : String(errorBody.detail);
+      }
+    } catch {
+      // Ignore JSON parsing errors and use the default error message
+    }
+
+    throw new Error(errorMessage);
   }
 
   return response.json();
