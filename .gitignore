@@ -4,7 +4,10 @@ __pycache__/
 .venv/
 venv/
 .env
-.env.local
+
+# Backend local database
+backend/movie_agent.db
+backend/*.db
 
 # Node / Next.js
 node_modules/
@@ -20,11 +23,12 @@ backend/data/raw/*
 backend/data/processed/*
 !backend/data/raw/.gitkeep
 !backend/data/processed/.gitkeep
+
+# Vector database
 backend/chroma_db/
 
 # Logs
 *.log
 
-# local database
-backend/movie_agent.db
-backend/*.db
+# Frontend env
+frontend/.env.local
