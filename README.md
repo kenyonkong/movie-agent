@@ -74,6 +74,18 @@ Day 5:
 - [x] RecommendationList component
 - [x] Loading and error states
 - [x] Full frontend-to-backend recommendation flow
+
+Day 6 Version 1.0: the memory logic needs to be fixed!
+- [x] SQLite database setup
+- [x] SQLAlchemy feedback model
+- [x] Feedback request/response schemas
+- [x] Memory service
+- [x] POST /feedback endpoint
+- [x] GET feedback history endpoint
+- [x] GET memory summary endpoint
+- [x] Frontend feedback buttons
+- [x] User memory summary display
+- <span style="color:red"> BUG: the four buttons are not mutually exclusive. E.g., a user can click both "Like" and "Dislike" for the same movie. And each click updates the memory independently. So unlimited feedback can be submitted for the same movie. </span>
 ## Planned Features
 
 - Movie metadata processing
@@ -84,3 +96,4 @@ Day 5:
 - User preference memory
 - Evaluation metrics: relevance, diversity, novelty, latency
 - Demo video and screenshots
+- <span style="color:red">New Idea: Allow users to write reviews for movies and use those reviews to further personalize recommendations. (Perhaps using LLMs to extract preferences from reviews and update the user memory.)</span>

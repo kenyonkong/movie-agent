@@ -3,8 +3,14 @@
 import { useState} from "react";
 import { RecommendationList } from "@/components/RecommendationList";
 import { SearchBar } from "@/components/SearchBar";
-import { recommendMovies } from "@/lib/api";
-import type { MovieRecommendation } from "@/types/movie";
+import { recommendMovies, getUserMemorySummary } from "@/lib/api";
+import type { 
+  MovieRecommendation,
+  FeedbackResponse,
+  UserMemorySummary,
+ } from "@/types/movie";
+
+const DEMO_USER_ID = "demo_user";
 
 export default function Home() {
   const [query, setQuery] = useState(
@@ -17,6 +23,16 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   // const [clientLatencyMs, setClientLatencyMs] = useState<number | null>(null);
+  const [memorySummary, setMemorySummary] = useState<UserMemorySummary | null>(null);
+
+  async function refreshMemorySummary() {
+    try {
+      const summary = await getUserMemorySummary(DEMO_USER_ID);
+      setMemorySummary(summary);
+    } catch {
+        // Memory summary is helpful but should not break the main UX.
+    }
+  }
 
   async function handleRecommend() {
     const trimmedQuery = query.trim();
@@ -50,6 +66,11 @@ export default function Home() {
     }
   }
   
+  async function handleFeedbackSaved(feedback: FeedbackResponse) {
+    // After saving feedback, we can optionally refresh the user's memory summary
+    await refreshMemorySummary();
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <section className="mx-auto max-w-5xl px-6 py-10 md:py-16">
@@ -66,6 +87,53 @@ export default function Home() {
             Chroma vector database.
           </p>
         </div>
+
+        {memorySummary && (
+          <section className="mb-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
+            <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-slate-100">
+                  User Memory
+                </h2>
+                <p className="text-sm text-slate-400">
+                  Feedback stored for {memorySummary.user_id}
+                </p>
+              </div>
+              <p className="rounded-full border border-slate-700 px-3 py-2 text-sm text-slate-300">
+                {memorySummary.total_feedback} feedback events
+              </p>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                <p className="mb-2 text-sm font-semibold text-cyan-300">
+                  Liked genres
+                </p>
+                <p className="text-sm text-slate-400">
+                  {Object.keys(memorySummary.liked_genres).length > 0
+                    ? Object.entries(memorySummary.liked_genres)
+                        .map(([genre, count]) => `${genre} (${count})`)
+                        .join(", ")
+                    : "No liked genres yet."}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                <p className="mb-2 text-sm font-semibold text-red-300">
+                  Disliked genres
+                </p>
+                <p className="text-sm text-slate-400">
+                  {Object.keys(memorySummary.disliked_genres).length > 0
+                    ? Object.entries(memorySummary.disliked_genres)
+                        .map(([genre, count]) => `${genre} (${count})`)
+                        .join(", ")
+                    : "No disliked genres yet."}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
 
         <SearchBar
           query={query}
@@ -108,7 +176,13 @@ export default function Home() {
         )}
 
         {!isLoading && (
-          <RecommendationList results={results} latencyMs={latencyMs} />
+          <RecommendationList
+          results={results}
+          latencyMs={latencyMs}
+          userId={DEMO_USER_ID}
+          query={lastQuery}
+          onFeedbackSaved={handleFeedbackSaved}
+          />
         )}
       </section>
     </main>

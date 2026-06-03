@@ -1,14 +1,20 @@
-import type { MovieRecommendation } from "@/types/movie";
+import type { MovieRecommendation, FeedbackResponse} from "@/types/movie";
 import { MovieCard } from "./MovieCard";
 
 type RecommendationListProps = {
     results: MovieRecommendation[];
     latencyMs: number | null;
+    userId: string;
+    query: string | null;
+    onFeedbackSaved?: (feedback: FeedbackResponse) => void;
 };
 
 export function RecommendationList({
     results, 
     latencyMs,
+    userId,
+    query,
+    onFeedbackSaved,
 }: RecommendationListProps) {
     if (results.length === 0) {
         return null;
@@ -19,7 +25,7 @@ export function RecommendationList({
       <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-100">
-            Recommendations ({results.length} movies)
+            Recommendations ({results.length})
           </h2>
           <p className="text-sm text-slate-400">
             Ranked by semantic similarity from your local vector database.
@@ -39,6 +45,9 @@ export function RecommendationList({
             key={movie.movie_id}
             movie={movie}
             rank={index + 1}
+            userId={userId}
+            query={query}
+            onFeedbackSaved={onFeedbackSaved}
           />
         ))}
       </div>

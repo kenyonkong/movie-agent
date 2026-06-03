@@ -24,3 +24,7 @@ backend/chroma_db/
 
 # Logs
 *.log
+
+# local database
+backend/movie_agent.db
+backend/*.db

@@ -35,4 +35,11 @@ class Settings(BaseModel):
     # Ingestion settings
     embedding_batch_size: int = int(os.getenv("EMBEDDING_BATCH_SIZE", 32))
 
+    # SQLite database path
+    sqlite_db_path: Path = backend_dir / "movie_agent.db"
+    database_url: str = os.getenv(
+        "DATABASE_URL", 
+        f"sqlite:///{sqlite_db_path}"
+    )
+
 settings = Settings()

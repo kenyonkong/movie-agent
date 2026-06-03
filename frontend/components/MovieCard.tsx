@@ -1,15 +1,19 @@
-import type { MovieRecommendation } from "@/types/movie";
+import type { MovieRecommendation, FeedbackResponse } from "@/types/movie";
+import { FeedbackButtons } from "@/components/FeedbackButtons";
 
 type MovieCardProps = {
     movie: MovieRecommendation;
     rank: number;
+    userId: string;
+    query: string | null;
+    onFeedbackSaved?: (feedback: FeedbackResponse) => void;
 };
 
 function formatScore(score: number): string {
   return `${Math.round(score * 100)}%`;
 }
 
-export function MovieCard({ movie, rank }: MovieCardProps) {
+export function MovieCard({ movie, rank, userId, query, onFeedbackSaved }: MovieCardProps) {
     return (
     <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl transition hover:border-cyan-500/60">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -55,20 +59,12 @@ export function MovieCard({ movie, rank }: MovieCardProps) {
         </p>
       </details>
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        <button className="rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-green-400 hover:text-green-300">
-          Like
-        </button>
-        <button className="rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-red-400 hover:text-red-300">
-          Dislike
-        </button>
-        <button className="rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-purple-400 hover:text-purple-300">
-          Watched
-        </button>
-        <button className="rounded-full border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-yellow-400 hover:text-yellow-300">
-          Save
-        </button>
-      </div>
+      <FeedbackButtons
+        movie={movie}
+        userId={userId}
+        query={query}
+        onFeedbackSaved={onFeedbackSaved}
+      />
     </article>
   );
 }

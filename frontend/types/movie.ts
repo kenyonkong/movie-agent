@@ -22,3 +22,38 @@ export type RecommendResponse = {
     results: MovieRecommendation[];
     latency_ms: number;
 };
+
+export type FeedbackAction = 'like' | 'dislike' | 'watched' | 'save';
+
+export type FeedbackRequest = {
+    user_id: string;
+    movie_id: string;
+    title: string;
+    action: FeedbackAction;
+    query?: string| null;
+    genres?: string | null;
+    score?: number | null;
+};
+
+export type FeedbackResponse = {
+    id: number;
+    user_id: string;
+    movie_id: string;
+    title: string;
+    action: FeedbackAction;
+    query: string | null;
+    genres: string | null;
+    score: number | null;
+    created_at: string;
+};
+
+export type UserMemorySummary = {
+    user_id: string;
+    total_feedback: number;
+    liked_movies: string[];
+    disliked_movies: string[];
+    watched_movies: string[];
+    saved_movies: string[];
+    liked_genres: Record<string, number>;
+    disliked_genres: Record<string, number>;
+};
