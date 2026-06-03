@@ -2,17 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.db.schemas import FeedbackRequest, FeedbackResponse, UserMemorySummary
+from app.db.schemas import FeedbackRequest, UserMemorySummary, UserMoviePreferenceResponse
 from app.services.memory_service import MemoryService
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 memory_service = MemoryService()
 
-@router.post("/", response_model=FeedbackResponse)
+@router.post("/", response_model=UserMoviePreferenceResponse)
 def save_feedback(
     request: FeedbackRequest,
     db: Session = Depends(get_db),
-) -> FeedbackResponse:
+) -> UserMoviePreferenceResponse:
     """
     Save one user feedback to the database.
 
@@ -30,19 +30,19 @@ def save_feedback(
         ) from error
     
 
-@router.get("/{user_id}", response_model=list[FeedbackResponse])
+@router.get("/{user_id}", response_model=list[UserMoviePreferenceResponse])
 def get_recent_feedback(
     user_id: str,
     limit: int = 10,
     db: Session = Depends(get_db),
-) -> list[FeedbackResponse]:
+) -> list[UserMoviePreferenceResponse]:
     """
     Return recent feedback events for one user.
 
     This can be used by the frontend to display a history of user interactions
     or by the recommender to understand recent user preferences.
     """
-    return memory_service.get_recent_feedback(
+    return memory_service.get_user_preferences(
         db=db,
         user_id=user_id,
         limit=limit,

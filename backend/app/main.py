@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import health, recommend, feedback
 from app.core.config import settings
+from app.db import models
 from app.db.database import create_db_tables
 
 app = FastAPI(

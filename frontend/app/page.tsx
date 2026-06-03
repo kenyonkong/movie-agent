@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { recommendMovies, getUserMemorySummary } from "@/lib/api";
 import type { 
   MovieRecommendation,
-  FeedbackResponse,
+  UserMoviePreferenceResponse,
   UserMemorySummary,
  } from "@/types/movie";
 
@@ -66,8 +66,8 @@ export default function Home() {
     }
   }
   
-  async function handleFeedbackSaved(feedback: FeedbackResponse) {
-    // After saving feedback, we can optionally refresh the user's memory summary
+  async function handlePreferenceSaved(_preference: UserMoviePreferenceResponse) {
+    // After saving preference, we can optionally refresh the user's memory summary
     await refreshMemorySummary();
   }
 
@@ -100,7 +100,7 @@ export default function Home() {
                 </p>
               </div>
               <p className="rounded-full border border-slate-700 px-3 py-2 text-sm text-slate-300">
-                {memorySummary.total_feedback} feedback events
+                {memorySummary.total_preferences} movie preferences states
               </p>
             </div>
 
@@ -128,6 +128,30 @@ export default function Home() {
                         .map(([genre, count]) => `${genre} (${count})`)
                         .join(", ")
                     : "No disliked genres yet."}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                <p className="mb-2 text-sm font-semibold text-purple-300">
+                  Watched movies
+                </p>
+                <p className="text-sm text-slate-400">
+                  {memorySummary.watched_movies.length > 0
+                    ? memorySummary.watched_movies.join(", ")
+                    : "No watched movies yet."}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                <p className="mb-2 text-sm font-semibold text-yellow-300">
+                  Saved movies
+                </p>
+                <p className="text-sm text-slate-400">
+                  {memorySummary.saved_movies.length > 0
+                    ? memorySummary.saved_movies.join(", ")
+                    : "No saved movies yet."}
                 </p>
               </div>
             </div>
@@ -181,7 +205,7 @@ export default function Home() {
           latencyMs={latencyMs}
           userId={DEMO_USER_ID}
           query={lastQuery}
-          onFeedbackSaved={handleFeedbackSaved}
+          onPreferenceSaved={handlePreferenceSaved}
           />
         )}
       </section>

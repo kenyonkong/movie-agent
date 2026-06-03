@@ -1,4 +1,4 @@
-import type { MovieRecommendation, FeedbackResponse } from "@/types/movie";
+import type { MovieRecommendation, UserMoviePreferenceResponse } from "@/types/movie";
 import { FeedbackButtons } from "@/components/FeedbackButtons";
 
 type MovieCardProps = {
@@ -6,14 +6,14 @@ type MovieCardProps = {
     rank: number;
     userId: string;
     query: string | null;
-    onFeedbackSaved?: (feedback: FeedbackResponse) => void;
+    onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
 };
 
 function formatScore(score: number): string {
   return `${Math.round(score * 100)}%`;
 }
 
-export function MovieCard({ movie, rank, userId, query, onFeedbackSaved }: MovieCardProps) {
+export function MovieCard({ movie, rank, userId, query, onPreferenceSaved }: MovieCardProps) {
     return (
     <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl transition hover:border-cyan-500/60">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -63,7 +63,7 @@ export function MovieCard({ movie, rank, userId, query, onFeedbackSaved }: Movie
         movie={movie}
         userId={userId}
         query={query}
-        onFeedbackSaved={onFeedbackSaved}
+        onFeedbackSaved={onPreferenceSaved}
       />
     </article>
   );

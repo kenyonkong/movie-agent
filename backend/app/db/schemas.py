@@ -42,27 +42,35 @@ class RecommendResponse(BaseModel):
 
 
 FeedbackAction = Literal["like", "dislike", "watched", "save"]
+PreferenceValue = Literal["like", "dislike"]
 
 class FeedbackRequest(BaseModel):
     user_id: str = Field(default="demo_user", min_length=1, max_length=128)
     movie_id: str = Field(..., min_length=1, max_length=128)
     title: str = Field(..., min_length=1, max_length=512)
     action: FeedbackAction
+
     query: str | None = Field(default=None, max_length=500)
     genres: str | None = None
     score: float | None = None
 
 
-class FeedbackResponse(BaseModel):
+class UserMoviePreferenceResponse(BaseModel):
     id: int
     user_id: str
     movie_id: str
     title: str
-    action: FeedbackAction
+
     query: str | None = None
     genres: str | None = None
     score: float | None = None
+
+    preference: PreferenceValue | None = None
+    watched: bool
+    saved: bool
+
     created_at: datetime
+    updated_at: datetime
 
 
 class UserMemorySummary(BaseModel):

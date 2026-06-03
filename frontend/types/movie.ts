@@ -24,6 +24,7 @@ export type RecommendResponse = {
 };
 
 export type FeedbackAction = 'like' | 'dislike' | 'watched' | 'save';
+export type PreferenceValue = "like" | "dislike";
 
 export type FeedbackRequest = {
     user_id: string;
@@ -35,25 +36,33 @@ export type FeedbackRequest = {
     score?: number | null;
 };
 
-export type FeedbackResponse = {
+export type UserMoviePreferenceResponse = {
     id: number;
     user_id: string;
     movie_id: string;
     title: string;
-    action: FeedbackAction;
+
     query: string | null;
     genres: string | null;
     score: number | null;
+
+    preference: PreferenceValue | null;
+    watched: boolean;
+    saved: boolean;
+
     created_at: string;
+    updated_at: string;
 };
 
 export type UserMemorySummary = {
     user_id: string;
-    total_feedback: number;
+    total_preferences: number;
+
     liked_movies: string[];
     disliked_movies: string[];
     watched_movies: string[];
     saved_movies: string[];
+    
     liked_genres: Record<string, number>;
     disliked_genres: Record<string, number>;
 };

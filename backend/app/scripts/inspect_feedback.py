@@ -1,8 +1,9 @@
 from sqlalchemy import desc, select
 
 from app.db.database import SessionLocal
-from app.db.models import UserFeedback
+from app.db.models import UserMoviePreference
 from app.services.memory_service import MemoryService
+
 
 def main() -> None:
     db = SessionLocal()
@@ -10,24 +11,26 @@ def main() -> None:
 
     try:
         statement = (
-            select(UserFeedback)
-            .order_by(desc(UserFeedback.created_at))
+            select(UserMoviePreference)
+            .order_by(desc(UserMoviePreference.updated_at))
             .limit(20)
         )
 
-        feedback_items = db.execute(statement).scalars().all()
+        preference_items = db.execute(statement).scalars().all()
 
-        print("\n========== RECENT FEEDBACK ==========")
+        print("\n========== RECENT USER MOVIE PREFERENCES ==========")
 
-        if not feedback_items:
-            print("No feedback found yet.")
+        if not preference_items:
+            print("No preferences found yet.")
         else:
-            for item in feedback_items:
+            for item in preference_items:
                 print(
-                    f"[{item.created_at}] "
+                    f"[updated_at={item.updated_at}] "
                     f"user={item.user_id} "
                     f"movie={item.title} "
-                    f"action={item.action} "
+                    f"preference={item.preference} "
+                    f"watched={item.watched} "
+                    f"saved={item.saved} "
                     f"genres={item.genres}"
                 )
 

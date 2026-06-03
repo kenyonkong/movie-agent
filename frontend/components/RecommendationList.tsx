@@ -1,4 +1,4 @@
-import type { MovieRecommendation, FeedbackResponse} from "@/types/movie";
+import type { MovieRecommendation, UserMoviePreferenceResponse} from "@/types/movie";
 import { MovieCard } from "./MovieCard";
 
 type RecommendationListProps = {
@@ -6,7 +6,7 @@ type RecommendationListProps = {
     latencyMs: number | null;
     userId: string;
     query: string | null;
-    onFeedbackSaved?: (feedback: FeedbackResponse) => void;
+    onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
 };
 
 export function RecommendationList({
@@ -14,7 +14,7 @@ export function RecommendationList({
     latencyMs,
     userId,
     query,
-    onFeedbackSaved,
+    onPreferenceSaved,
 }: RecommendationListProps) {
     if (results.length === 0) {
         return null;
@@ -47,7 +47,7 @@ export function RecommendationList({
             rank={index + 1}
             userId={userId}
             query={query}
-            onFeedbackSaved={onFeedbackSaved}
+            onPreferenceSaved={onPreferenceSaved}
           />
         ))}
       </div>

@@ -4,15 +4,16 @@ import { useState } from "react";
 import { sendFeedback } from "@/lib/api";
 import type {
     FeedbackAction,
-    FeedbackResponse,
     MovieRecommendation,
+    PreferenceValue,
+    UserMoviePreferenceResponse,
 } from "@/types/movie";
 
 type FeedbackButtonsProps = {
     movie: MovieRecommendation;
     userId: string;
     query: string | null;
-    onFeedbackSaved?: (feedback: FeedbackResponse) => void;
+    onFeedbackSaved?: (feedback: UserMoviePreferenceResponse) => void;
 };
 
 const ACTIONS: {
@@ -32,13 +33,19 @@ export function FeedbackButtons({
     onFeedbackSaved,
 }: FeedbackButtonsProps) {
     const [pendingAction, setPendingAction] = useState<FeedbackAction | null>(null);
-    const [lastSavedAction, setLastSavedAction] = useState<FeedbackAction | null>(null);
+
+    const [preference, setPreference] = useState<PreferenceValue | null>(null);
+    const [watched, setWatched] = useState(false);
+    const [saved, setSaved] = useState(false);
+
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     async function handleFeedback(action: FeedbackAction) {
         try {
             setPendingAction(action);
             setError(null);
+            setStatusMessage(null);
 
             const response = await sendFeedback({
                 user_id: userId,
@@ -50,7 +57,16 @@ export function FeedbackButtons({
                 score: movie.score,
             });
 
-            setLastSavedAction(response.action);
+            setPreference(response.preference);
+            setWatched(response.watched);
+            setSaved(response.saved);
+
+            setStatusMessage(
+              `Saved state: preference=${response.preference ?? "none"}, watched=${
+                response.watched
+              }, saved=${response.saved}`
+            );
+
             onFeedbackSaved?.(response);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to save feedback");
@@ -59,12 +75,32 @@ export function FeedbackButtons({
         }
     }
 
+    function isActionActive(action: FeedbackAction): boolean {
+      if (action === "like") {
+        return preference === "like";
+      }
+
+      if (action === "dislike") {
+        return preference === "dislike";
+      }
+
+      if (action === "watched") {
+        return watched;
+      }
+
+      if (action === "save") {
+        return saved;
+      }
+
+      return false;
+    }
+
     return (
     <div className="mt-5">
       <div className="flex flex-wrap gap-2">
         {ACTIONS.map(({ action, label }) => {
           const isPending = pendingAction === action;
-          const isLastSaved = lastSavedAction === action;
+          const isActive = isActionActive(action);
 
           return (
             <button
@@ -74,7 +110,7 @@ export function FeedbackButtons({
               disabled={pendingAction !== null}
               className={[
                 "rounded-full border px-3 py-2 text-xs transition disabled:cursor-not-allowed disabled:opacity-60",
-                isLastSaved
+                isActive
                   ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
                   : "border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-cyan-300",
               ].join(" ")}
@@ -85,11 +121,7 @@ export function FeedbackButtons({
         })}
       </div>
 
-      {lastSavedAction && (
-        <p className="mt-2 text-xs text-cyan-300">
-          Saved feedback: {lastSavedAction}
-        </p>
-      )}
+      {statusMessage && <p className="mt-2 text-xs text-green-300">{statusMessage}</p>}
 
       {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
     </div>

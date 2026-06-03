@@ -1,10 +1,11 @@
 from collections import Counter
+from datetime import datetime, timezone
 
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.db.models import UserFeedback
-from app.db.schemas import (FeedbackRequest, FeedbackResponse, UserMemorySummary,)
+from app.db.models import UserMoviePreference
+from app.db.schemas import (FeedbackRequest, UserMoviePreferenceResponse, UserMemorySummary,)
 
 
 class MemoryService:
@@ -21,52 +22,86 @@ class MemoryService:
         self,
         db: Session,
         request: FeedbackRequest,
-    ) -> FeedbackResponse:
+    ) -> UserMoviePreferenceResponse:
         """
-        Save one user feedback to the database.
+        Upsert one current preference state for a user/movie pair.
 
-        Args:
-            db: Database session
-            request: FeedbackRequest containing user feedback details
+        Behavior:
+        - like sets preference = "like"
+        - dislike sets preference = "dislike"
+        - watched sets watched = True
+        - save sets saved = True
 
-        Returns:
-            FeedbackResponse with saved feedback details
+        Repeated clicks do not create duplicate rows.
         """
-        feedback = UserFeedback(
-            user_id=request.user_id,
-            movie_id=request.movie_id,
-            title=request.title,
-            action=request.action,
-            query=request.query,
-            genres=request.genres,
-            score=request.score,
-        )
-
-        db.add(feedback)
-        db.commit()
-        db.refresh(feedback)
-
-        return self._to_feedback_response(feedback)
+        preference = self._get_existing_preference(
+            db = db, 
+            user_id = request.user_id, 
+            movie_id = request.movie_id)
+        
+        now = datetime.now(timezone.utc)
+        if preference is None:
+            # Create new preference
+            preference = UserMoviePreference(
+                user_id=request.user_id,
+                movie_id=request.movie_id,
+                title=request.title,
+                query=request.query,
+                genres=request.genres,
+                score=request.score,
+                preference=None,
+                watched=False,
+                saved=False,
+                created_at=now,
+                updated_at=now,
+            )
+            db.add(preference)
+        
+        # Always refresh display/context metadata with the latest recommendation context.
+        preference.title = request.title
+        preference.query = request.query
+        preference.genres = request.genres
+        preference.score = request.score
+        preference.updated_at = now
     
+        if request.action == "like":
+            preference.preference = "like"
 
-    def get_recent_feedback(
+        elif request.action == "dislike":
+            preference.preference = "dislike"
+
+        elif request.action == "watched":
+            preference.watched = True
+
+        elif request.action == "save":
+            preference.saved = True
+
+        else:
+            raise ValueError(f"Unsupported feedback action: {request.action}")
+
+        db.commit()
+        db.refresh(preference)
+
+        return self._to_preference_response(preference)
+
+    def get_user_preferences(
         self,
         db: Session,
         user_id: str,
         limit: int = 10,
-    ) -> list[FeedbackResponse]:
+    ) -> list[UserMoviePreferenceResponse]:
         """
         Return recent feedback events for one user.
         """
         statement = (
-            select(UserFeedback)
-            .where(UserFeedback.user_id == user_id)
-            .order_by(desc(UserFeedback.created_at))
+            select(UserMoviePreference)
+            .where(UserMoviePreference.user_id == user_id)
+            .order_by(desc(UserMoviePreference.updated_at))
             .limit(limit)
         )
         
         feedbacks = db.execute(statement).scalars().all()
-        return [self._to_feedback_response(feedback) for feedback in feedbacks]
+        return [self._to_preference_response(feedback) for feedback in feedbacks]
     
 
     def get_memory_summary(
@@ -78,12 +113,12 @@ class MemoryService:
         Return a summary of the user's feedback history, including liked/disliked movies and genres.
         """
         statement = (
-            select(UserFeedback)
-            .where(UserFeedback.user_id == user_id)
-            .order_by(desc(UserFeedback.created_at))
+            select(UserMoviePreference)
+            .where(UserMoviePreference.user_id == user_id)
+            .order_by(desc(UserMoviePreference.updated_at))
         )
         
-        feedback_items = db.execute(statement).scalars().all()
+        preference_items = db.execute(statement).scalars().all()
 
         liked_movies: list[str] = []
         disliked_movies: list[str] = []
@@ -93,21 +128,22 @@ class MemoryService:
         liked_genres_counter: Counter[str] = Counter()
         disliked_genres_counter: Counter[str] = Counter()
 
-        for item in feedback_items:
-            if item.action == "like":
+        for item in preference_items:
+            if item.preference == "like":
                 liked_movies.append(item.title)
                 self._update_genre_counter(liked_genres_counter, item.genres)
-            elif item.action == "dislike":
+            elif item.preference == "dislike":
                 disliked_movies.append(item.title)
                 self._update_genre_counter(disliked_genres_counter, item.genres)
-            elif item.action == "watched":
+
+            if item.watched:
                 watched_movies.append(item.title)
-            elif item.action == "save":
+            if item.saved:
                 saved_movies.append(item.title)
 
         return UserMemorySummary(
             user_id=user_id,
-            total_feedback=len(feedback_items),
+            total_feedback=len(preference_items),
             liked_movies=liked_movies[:10],
             disliked_movies=disliked_movies[:10],
             watched_movies=watched_movies[:10],
@@ -115,6 +151,25 @@ class MemoryService:
             liked_genres=dict(liked_genres_counter.most_common(10)),
             disliked_genres=dict(disliked_genres_counter.most_common(10))
         )
+
+
+    def _get_existing_preference(
+        self,
+        db: Session,
+        user_id: str,
+        movie_id: str,
+    ) -> UserMoviePreference | None:
+        """Check if there's an existing preference for the user/movie pair."""
+        statement = (
+            select(UserMoviePreference)
+            .where(
+                UserMoviePreference.user_id == user_id,
+                UserMoviePreference.movie_id == movie_id,
+            )
+        )
+
+        return db.execute(statement).scalar_one_or_none()
+
 
     def _update_genre_counter(self, counter: Counter[str], genres: str | None) -> None:
         """
@@ -131,18 +186,24 @@ class MemoryService:
             if genre:
                 counter[genre] += 1
         
-    def _to_feedback_response(self, feedback: UserFeedback) -> FeedbackResponse:
+
+    def _to_preference_response(self, preference: UserMoviePreference) -> UserMoviePreferenceResponse:
         """
-        Convert a UserFeedback ORM object to a FeedbackResponse Pydantic model.
+        Convert a UserMoviePreference ORM object to a UserMoviePreferenceResponse Pydantic model.
         """
-        return FeedbackResponse(
-            id=feedback.id,
-            user_id=feedback.user_id,
-            movie_id=feedback.movie_id,
-            title=feedback.title,
-            action=feedback.action,
-            query=feedback.query,
-            genres=feedback.genres,
-            score=feedback.score,
-            created_at=feedback.created_at,
+        return UserMoviePreferenceResponse(
+            id=preference.id,
+            user_id=preference.user_id,
+            movie_id=preference.movie_id,
+            title=preference.title,
+            
+            query=preference.query,
+            genres=preference.genres,
+            score=preference.score,
+
+            preference=preference.preference,
+            watched=preference.watched,
+            saved=preference.saved,
+            created_at=preference.created_at,
+            updated_at=preference.updated_at,
         )

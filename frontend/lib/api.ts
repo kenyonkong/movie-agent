@@ -2,7 +2,7 @@ import type {
   RecommendRequest, 
   RecommendResponse, 
   FeedbackRequest, 
-  FeedbackResponse, 
+  UserMoviePreferenceResponse,
   UserMemorySummary
  } from "@/types/movie";
 
@@ -62,7 +62,7 @@ export async function recommendMovies(
 
 export async function sendFeedback(
   requestBody: FeedbackRequest
-): Promise<FeedbackResponse> {
+): Promise<UserMoviePreferenceResponse> {
   const response = await fetch(`${API_BASE_URL}/feedback`, {
     method: "POST",
     headers: {

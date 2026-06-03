@@ -86,6 +86,16 @@ Day 6 Version 1.0: the memory logic needs to be fixed!
 - [x] Frontend feedback buttons
 - [x] User memory summary display
 - <span style="color:red"> BUG: the four buttons are not mutually exclusive. E.g., a user can click both "Like" and "Dislike" for the same movie. And each click updates the memory independently. So unlimited feedback can be submitted for the same movie. </span>
+
+Day 6 Version 2.0: memory logic refactor
+- [x] SQLite database setup
+- [x] SQLAlchemy `UserMoviePreference` model
+- [x] Unique constraint on `(user_id, movie_id)`
+- [x] Upsert-style feedback update logic
+- [x] Mutually exclusive Like/Dislike preference
+- [x] Independent Watched/Saved flags
+- [x] Memory summary based on current user/movie states
+- [x] Frontend feedback buttons connected to backend
 ## Planned Features
 
 - Movie metadata processing
