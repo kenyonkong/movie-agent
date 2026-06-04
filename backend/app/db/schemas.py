@@ -3,6 +3,9 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Literal
 
+FeedbackAction = Literal["like", "dislike", "watched", "save"]
+PreferenceValue = Literal["like", "dislike"]
+
 class RecommendRequest(BaseModel):
     user_id: str = Field(
         default="demo_user",
@@ -27,10 +30,28 @@ class MovieRecommendation(BaseModel):
     title: str
     release_year: int | None = None
     genres: str | None = None
-    score: float
+
+    # final score used for ranking
+    score: float 
+    # raw distance from the vector database (lower is more similar)
     distance: float
+    # Score converted from vector distance. Higher means more similar.
+    semantic_score: float
+    # User-memory contribution from liked/disliked movies (positive means more similar, negative means less similar)
+    preference_score: float
+
+    # Current perference state. "like", "dislike", or None if no feedback given yet.
+    preference: PreferenceValue | None = None
+
+    # whether the movie was already watched
+    watched: bool = False
+    # whether the movie was already saved
+    saved: bool = False
+
     reason: str
     document_preview: str
+    # Debug information showing why this item received its final score.
+    ranking_signals: dict[str, float | bool | str]
 
 
 class RecommendResponse(BaseModel):
@@ -40,9 +61,6 @@ class RecommendResponse(BaseModel):
     results: list[MovieRecommendation]
     latency_ms: float
 
-
-FeedbackAction = Literal["like", "dislike", "watched", "save"]
-PreferenceValue = Literal["like", "dislike"]
 
 class FeedbackRequest(BaseModel):
     user_id: str = Field(default="demo_user", min_length=1, max_length=128)

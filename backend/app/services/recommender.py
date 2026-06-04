@@ -1,8 +1,14 @@
 import time
+from turtle import title
 from typing import Any
+
+from sqlalchemy.orm import Session
 
 from app.db.schemas import MovieRecommendation, RecommendResponse
 from app.services.vector_store import MovieVectorStore
+from app.services.reranker import MovieReranker
+from app.services.memory_service import MemoryService
+
 
 
 class RecommenderService:
@@ -16,13 +22,28 @@ class RecommenderService:
     - reranking
     - diversity control
     - LLM-based explanations
+
+    Day 8 version:
+    - Retrieves a larger candidate pool from vector search
+    - Loads user preference memory from SQLite
+    - Reranks candidates using semantic score + memory signals
     """
+
+    CANDIDATE_MULTIPLIER = 6 # Retrieve this many candidates from vector search before reranking
+    MIN_CANDIDATE_POOL = 30 # Always retrieve at least this many candidates for reranking
 
     def __init__(self) -> None:
         self.vector_store = MovieVectorStore()
+        self.reranker = MovieReranker()
+        self.memory_service = MemoryService()
     
 
-    def recommend(self, user_id: str, query: str, top_k: int = 5) -> RecommendResponse:
+    def recommend(
+            self,
+            db: Session, 
+            user_id: str, 
+            query: str, 
+            top_k: int = 5) -> RecommendResponse:
         """
         Return movie recommendations for a natural-language query.
         """
@@ -31,10 +52,21 @@ class RecommenderService:
         if self.vector_store.count() == 0:
             raise ValueError("Vector store is empty. Please build the vector database first.")
         
-        raw_results = self.vector_store.search(query=query, top_k=top_k)
+        candidate_k = max(top_k * self.CANDIDATE_MULTIPLIER, self.MIN_CANDIDATE_POOL)
+
+        raw_candidates = self.vector_store.search(query, top_k=candidate_k)
+
+        user_memory = self.memory_service.get_reranking_memory(db=db, user_id=user_id)
+
+        reranked_results = self.reranker.rerank(
+            candidates=raw_candidates,
+            user_memory=user_memory,
+            top_k=top_k,
+        )
 
         recommendations = [
-            self._format_recommendation(result) for result in raw_results
+            self._format_recommendation(result)
+            for result in reranked_results
         ]
 
         latency_ms = (time.perf_counter() - start_time) * 1000 # Convert to milliseconds
@@ -53,20 +85,32 @@ class RecommenderService:
         Convert raw vector search result into API response format.
         """
         distance = float(result.get("distance", 0.0))
-        score = self._distance_to_score(distance)
+        final_score = float(result.get("final_score", 0.0))
+        semantic_score = float(result.get("semantic_score", 0.0))
+        preference_score = float(result.get("preference_score", 0.0))
 
         document = result.get("document", "") or ""
         document_preview = self._make_document_preview(document)
 
         title = result.get("title") or "Unknown Title"
         release_year = result.get("release_year")
+
         if release_year == -1:
             release_year = None
-        
-        reason = self._generate_simple_reason(
+
+        watched = bool(result.get("watched", False))
+        saved = bool(result.get("saved", False))
+        preference = result.get("preference")
+        if preference not in ("like", "dislike"):
+            preference = None
+
+        reason = self._generate_reranked_reason(
             title=title,
             genres=result.get("genres"),
-            score=score,
+            semantic_score=semantic_score,
+            preference_score=preference_score,
+            watched=watched,
+            saved=saved,
         )
 
         return MovieRecommendation(
@@ -74,25 +118,18 @@ class RecommenderService:
             title=title,
             release_year=release_year,
             genres=result.get("genres"),
-            score=score,
+            score=round(final_score, 4),
             distance=round(distance, 4),
+            semantic_score=round(semantic_score, 4),
+            preference_score=round(preference_score, 4),
+            preference=preference,
+            watched=watched,
+            saved=saved,
             reason=reason,
             document_preview=document_preview,
+            ranking_signals=result.get("ranking_signals", {}),
         )
-
-
-    def _distance_to_score(self, distance: float) -> float:
-        """
-        Convert vector distance into a more intuitive score.
-
-        Chroma returns a distance where smaller usually means more similar.
-        We convert it into a score where larger means better.
-
-        This is not a calibrated probability. It is just a user-friendly
-        retrieval score for display and debugging.
-        """
-        score = 1.0 / (1.0 + max(distance, 0.0))
-        return round(score, 4)
+       
     
 
     def _make_document_preview(self, document: str, max_chars: int = 500) -> str:
@@ -107,25 +144,45 @@ class RecommenderService:
         return document[:max_chars].rstrip() + "..."
     
 
-    def _generate_simple_reason(
-        self,
-        title: str,
+    def _generate_reranked_reason(
+        self, 
+        title: str, 
         genres: str | None,
-        score: float,
+        semantic_score: float,
+        preference_score: float,
+        watched: bool,
+        saved: bool,
     ) -> str:
         """
-        Temporary non-LLM explanation.
-
-        Later we will replace or improve this with LLM-grounded explanations.
-        For now, we avoid hallucination by only using available metadata.
+        Generate a transparent non-LLM explanation for the reranked result.
         """
+        parts: list[str] = [
+            f"{title} was retrieved because it semantically matches your query "
+            f"(semantic score: {semantic_score:.2f})."
+]
+
         if genres:
-            return (
-                f"Recommended because {title} is semantically close to your query "
-                f"and belongs to genres such as {genres}. Retrieval score: {score:.2f}."
+            parts.append(f"It belongs to genres such as {genres}.")
+
+        if preference_score > 0:
+            parts.append(
+                f"It received a preference boost based on your liked genres "
+                f"(preference score: {preference_score:.2f})."
+            )
+        elif preference_score < 0:
+            parts.append(
+                f"It was penalized because it overlaps with genres you disliked "
+                f"(preference score: {preference_score:.2f})."
             )
 
-        return (
-            f"Recommended because {title} is semantically close to your query. "
-            f"Retrieval score: {score:.2f}."
-        )
+        if watched:
+            parts.append(
+                "It was also penalized because you already marked it as watched."
+            )
+
+        if saved:
+            parts.append(
+                "It received a small boost because you previously saved it."
+            )
+
+        return " ".join(parts)

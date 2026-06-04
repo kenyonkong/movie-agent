@@ -1,5 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
+from sqlalchemy.orm import Session
+
+from app.db.database import get_db
 from app.db.schemas import RecommendRequest, RecommendResponse
 from app.services.recommender import RecommenderService
 
@@ -8,7 +11,10 @@ router = APIRouter(prefix="/recommend", tags=["recommendation"])
 recommender = RecommenderService() # global recommender instance avoids repeated initialization overhead.
 
 @router.post("", response_model=RecommendResponse)
-def recommend(request: RecommendRequest) -> RecommendResponse:
+def recommend_movies(
+    request: RecommendRequest,
+    db: Session = Depends(get_db)
+) -> RecommendResponse:
     """
     Recommend movies from a natural-language user query.
 
@@ -19,6 +25,7 @@ def recommend(request: RecommendRequest) -> RecommendResponse:
     """
     try:
         return recommender.recommend(
+            db=db,
             user_id=request.user_id,
             query=request.query,
             top_k=request.top_k,
@@ -41,4 +48,5 @@ def recommend_debug() -> dict:
     return {
         "vector_store_count": recommender.vector_store.count(),
         "message": "Recommendation service is ready.",
+        "reranked": "enabled",
     }

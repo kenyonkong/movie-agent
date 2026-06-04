@@ -1,12 +1,25 @@
+export type FeedbackAction = 'like' | 'dislike' | 'watched' | 'save';
+export type PreferenceValue = "like" | "dislike";
+
 export type MovieRecommendation = {
     movie_id: string;
     title: string;
     release_year: number | null;
     genres: string | null;
+
     score: number;
     distance: number;
+    semantic_score: number;
+    preference_score: number;
+
+    preference: PreferenceValue | null;
+    watched: boolean;
+    saved: boolean;
+
     reason: string;
     document_preview: string;
+
+    ranking_signals: Record<string, number | boolean | string>;
 };
 
 export type RecommendRequest = {
@@ -23,8 +36,6 @@ export type RecommendResponse = {
     latency_ms: number;
 };
 
-export type FeedbackAction = 'like' | 'dislike' | 'watched' | 'save';
-export type PreferenceValue = "like" | "dislike";
 
 export type FeedbackRequest = {
     user_id: string;

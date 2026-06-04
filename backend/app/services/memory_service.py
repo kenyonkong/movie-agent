@@ -207,3 +207,53 @@ class MemoryService:
             created_at=preference.created_at,
             updated_at=preference.updated_at,
         )
+    
+    def get_reranking_memory(
+            self,
+            db: Session,
+            user_id: str,
+    ) -> dict:
+        """
+        Return user memory in a format useful for reranking.
+
+        This is based on current preference states, not raw click events.
+        Since there is only one row per user/movie pair, repeated clicks
+        do not inflate these signals.
+        """
+        statement = (
+            select(UserMoviePreference)
+            .where(UserMoviePreference.user_id == user_id)
+        )
+        
+        preference_items = db.execute(statement).scalars().all()
+
+        liked_genres: Counter[str] = Counter()
+        disliked_genres: Counter[str] = Counter()
+        watched_movie_ids: set[str] = set()
+        saved_movie_ids: set[str] = set()
+        liked_movie_ids: set[str] = set()
+        disliked_movie_ids: set[str] = set()
+
+        for item in preference_items:
+            if item.preference == "like":
+                liked_movie_ids.add(item.movie_id)
+                self._update_genre_counter(liked_genres, item.genres)
+            elif item.preference == "dislike":
+                disliked_movie_ids.add(item.movie_id)
+                self._update_genre_counter(disliked_genres, item.genres)
+
+            if item.watched:
+                watched_movie_ids.add(item.movie_id)
+            if item.saved:
+                saved_movie_ids.add(item.movie_id)
+        
+        return {
+            "liked_genres": dict(liked_genres),
+            "disliked_genres": dict(disliked_genres),
+            "watched_movie_ids": list(watched_movie_ids),
+            "saved_movie_ids": list(saved_movie_ids),
+            "liked_movie_ids": list(liked_movie_ids),
+            "disliked_movie_ids": list(disliked_movie_ids),
+        }
+
+        

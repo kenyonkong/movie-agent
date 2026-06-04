@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sendFeedback } from "@/lib/api";
 import type {
     FeedbackAction,
@@ -34,12 +34,26 @@ export function FeedbackButtons({
 }: FeedbackButtonsProps) {
     const [pendingAction, setPendingAction] = useState<FeedbackAction | null>(null);
 
-    const [preference, setPreference] = useState<PreferenceValue | null>(null);
-    const [watched, setWatched] = useState(false);
-    const [saved, setSaved] = useState(false);
+    const [preference, setPreference] = useState<PreferenceValue | null>(movie.preference);
+    const [watched, setWatched] = useState(movie.watched);
+    const [saved, setSaved] = useState(movie.saved);
 
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    /*
+    * Important:
+    * When the user searches again, React creates/reuses MovieCard components
+    * with new movie props. We need to sync local button state from the backend
+    * state included in the recommendation response.
+    */
+    useEffect(() => {
+      setPreference(movie.preference);
+      setWatched(movie.watched);
+      setSaved(movie.saved);
+      setStatusMessage(null);
+      setError(null);
+    }, [movie.movie_id, movie.preference, movie.watched, movie.saved]);
 
     async function handleFeedback(action: FeedbackAction) {
         try {

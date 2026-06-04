@@ -66,8 +66,22 @@ export default function Home() {
     }
   }
   
-  async function handlePreferenceSaved(_preference: UserMoviePreferenceResponse) {
-    // After saving preference, we can optionally refresh the user's memory summary
+  async function handlePreferenceSaved(
+    preferenceState: UserMoviePreferenceResponse
+  ) {
+    setResults((currentResults) =>
+      currentResults.map((movie) =>
+        movie.movie_id === preferenceState.movie_id
+          ? {
+              ...movie,
+              preference: preferenceState.preference,
+              watched: preferenceState.watched,
+              saved: preferenceState.saved,
+            }
+          : movie
+      )
+    );
+
     await refreshMemorySummary();
   }
 
