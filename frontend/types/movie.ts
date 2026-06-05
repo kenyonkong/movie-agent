@@ -26,12 +26,18 @@ export type RecommendRequest = {
     user_id: string;
     query: string;
     top_k: number;
+    include_watched: boolean;
 };
 
 export type RecommendResponse = {
     user_id: string;
     query: string;
     top_k: number;
+
+    included_watched: boolean;
+    candidate_count: number;
+    filtered_watched_count: number;
+
     results: MovieRecommendation[];
     latency_ms: number;
 };

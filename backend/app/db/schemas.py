@@ -23,6 +23,10 @@ class RecommendRequest(BaseModel):
         le=10,
         description="Number of movie recommendations to return.",
     )
+    include_watched: bool = Field(
+        default=False,
+        description="Whether to include movies the user has already watched in the recommendations.",
+    )
 
 
 class MovieRecommendation(BaseModel):
@@ -58,6 +62,11 @@ class RecommendResponse(BaseModel):
     user_id: str
     query: str
     top_k: int
+
+    include_watched: bool
+    candidate_count: int
+    filtered_watched_count: int
+
     results: list[MovieRecommendation]
     latency_ms: float
 

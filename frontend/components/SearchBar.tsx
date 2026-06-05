@@ -1,9 +1,11 @@
 type SearchBarProps = {
     query: string;
     topK: number;
+    includeWatched: boolean;
     isLoading: boolean;
     onQueryChange: (query: string) => void;
     onTopKChange: (topK: number) => void;
+    onIncludeWatchedChange: (includeWatched: boolean) => void;
     onSubmit: () => void;
 };
 
@@ -18,9 +20,11 @@ const EXAMPLE_QUERIES = [
 export function SearchBar({
     query,
     topK,
+    includeWatched,
     isLoading,
     onQueryChange,
     onTopKChange,
+    onIncludeWatchedChange,
     onSubmit,
 }: SearchBarProps) {
     function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -53,20 +57,32 @@ export function SearchBar({
         />
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <label className="flex items-center gap-3 text-sm text-slate-300">
-            Top K
-            <select
-              value={topK}
-              onChange={(event) => onTopKChange(Number(event.target.value))}
-              className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
-            >
-              {[3, 5, 8, 10].map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <label className="flex items-center gap-3 text-sm text-slate-300">
+              Top K
+              <select
+                value={topK}
+                onChange={(event) => onTopKChange(Number(event.target.value))}
+                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-cyan-400"
+              >
+                {[3, 5, 8, 10].map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex items-center gap-3 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={includeWatched}
+                onChange={(event) => onIncludeWatchedChange(event.target.checked)}
+                className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
+              />
+              Include watched movies
+            </label>
+          </div>
 
           <button
             type="submit"

@@ -11,13 +11,43 @@ class MovieReranker:
     - watched movie penalty
     - saved movie boost
 
+    Day 9 version:
+    - watched movie filtering or penalty added to Day 8 version
+
     This is a transparent heuristic reranker, not a learned model.
     """
 
     SEMANTIC_WEIGHT = 0.75
     PREFERENCE_WEIGHT = 0.15
     SAVED_WEIGHT = 0.1
-    WATCHED_PENALTY = 0.2
+    WATCHED_PENALTY = 0.15
+
+
+    def filter_watched_candidates(
+            self,
+            candidates: list[dict[str, Any]],
+            user_memory: dict,
+            include_watched: bool = False,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """
+        Optionally remove watched movies from the candidate pool.
+
+        Returns:
+            filtered_candidates, filtered_watched_count
+        """
+        if include_watched:
+            return candidates, 0
+        
+        watched_movie_ids = user_memory.get("watched_movie_ids", set())
+        filtered_candidates = [
+            candidate for candidate in candidates
+            if str(candidate.get("id")) not in watched_movie_ids
+        ]
+        filtered_watched_count = len(candidates) - len(filtered_candidates)
+        return filtered_candidates, filtered_watched_count
+
+
+
 
     def rerank(
         self,
@@ -134,8 +164,8 @@ class MovieReranker:
         liked_total = sum(liked_genres.values()) or 1
         disliked_total = sum(disliked_genres.values()) or 1
 
-        liked_score = 0
-        disliked_score = 0
+        liked_score = 0.0
+        disliked_score = 0.0
 
         for genre in movie_genres:
             liked_score += liked_genres.get(genre, 0) / liked_total

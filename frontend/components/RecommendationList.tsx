@@ -4,6 +4,9 @@ import { MovieCard } from "./MovieCard";
 type RecommendationListProps = {
     results: MovieRecommendation[];
     latencyMs: number | null;
+    candidateCount: number | null;
+    filteredWatchedCount: number | null;
+    includeWatched: boolean;
     userId: string;
     query: string | null;
     onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
@@ -12,6 +15,9 @@ type RecommendationListProps = {
 export function RecommendationList({
     results, 
     latencyMs,
+    candidateCount,
+    filteredWatchedCount,
+    includeWatched,
     userId,
     query,
     onPreferenceSaved,
@@ -35,6 +41,24 @@ export function RecommendationList({
         {latencyMs !== null && (
           <p className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-300">
             Latency: {latencyMs.toFixed(2)} ms
+          </p>
+        )}
+        
+        {candidateCount !== null && (
+          <p className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-300">
+            Candidates: {candidateCount}
+          </p>
+        )}
+
+        {filteredWatchedCount !== null && !includeWatched && (
+          <p className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-300">
+            Watched filtered: {filteredWatchedCount}
+          </p>
+        )}
+
+        {includeWatched && (
+          <p className="rounded-full border border-purple-800 bg-purple-950/40 px-4 py-2 text-sm text-purple-200">
+            Including watched
           </p>
         )}
       </div>

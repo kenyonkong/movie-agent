@@ -29,6 +29,7 @@ def recommend_movies(
             user_id=request.user_id,
             query=request.query,
             top_k=request.top_k,
+            include_watched=request.include_watched,
         )
     except RuntimeError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
@@ -49,4 +50,5 @@ def recommend_debug() -> dict:
         "vector_store_count": recommender.vector_store.count(),
         "message": "Recommendation service is ready.",
         "reranked": "enabled",
+        "watched_filtering": "configurable",
     }

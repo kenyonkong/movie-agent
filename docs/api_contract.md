@@ -29,7 +29,8 @@ Example request:
 {
   "user_id": "demo_user",
   "query": "I want something like Her, lonely and futuristic, but not too slow",
-  "top_k": 5
+  "top_k": 5,
+  "include_watched": false
 }
 ```
 
@@ -40,19 +41,37 @@ Example response:
   "user_id": "demo_user",
   "query": "I want something like Her, lonely and futuristic, but not too slow",
   "top_k": 5,
+  "include_watched": false,
+  "candidate_count": 40,
+  "filtered_watched_count": 1,
   "results": [
     {
-      "movie_id": "152601",
-      "title": "Her",
-      "release_year": 2013,
-      "genres": "Romance, Science Fiction, Drama",
-      "score": 0.48,
-      "distance": 1.08,
-      "reason": "Recommended because Her is semantically close to your query and belongs to genres such as Romance, Science Fiction, Drama.",
-      "document_preview": "Title: Her (2013)..."
+      "movie_id": "123",
+      "title": "After Yang",
+      "release_year": 2021,
+      "genres": "Science Fiction, Drama",
+      "score": 0.52,
+      "distance": 0.96,
+      "semantic_score": 0.51,
+      "preference_score": 0.33,
+      "preference": null,
+      "watched": false,
+      "saved": false,
+      "reason": "After Yang was retrieved because...",
+      "document_preview": "Title: After Yang...",
+      "ranking_signals": {
+        "semantic_score": 0.51,
+        "preference_score": 0.33,
+        "saved_boost": 0.0,
+        "watched_penalty": 0.0,
+        "final_score": 0.52,
+        "preference": "none",
+        "watched": false,
+        "saved": false
+      }
     }
   ],
-  "latency_ms": 120.5
+  "latency_ms": 130.2
 }
 ```
 

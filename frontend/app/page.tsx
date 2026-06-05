@@ -16,6 +16,11 @@ export default function Home() {
   const [query, setQuery] = useState(
     "I want something like Her, lonely and futuristic, but not too slow"
   );
+
+  const [includeWatched, setIncludeWatched] = useState(false);
+  const [candidateCount, setCandidateCount] = useState<number | null>(null);
+  const [filteredWatchedCount, setFilteredWatchedCount] = useState<number | null>(null);
+
   const [topK, setTopK] = useState(5);
   const [results, setResults] = useState<MovieRecommendation[]>([]);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
@@ -49,16 +54,21 @@ export default function Home() {
       const resonse = await recommendMovies({ 
         user_id: "demo_user",
         query: trimmedQuery,
+        include_watched: includeWatched,
         top_k: topK,
       });
       // setClientLatencyMs(performance.now() - startTime);
 
       setResults(resonse.results);
       setLatencyMs(resonse.latency_ms);
+      setCandidateCount(resonse.candidate_count);
+      setFilteredWatchedCount(resonse.filtered_watched_count);
       setLastQuery(trimmedQuery);
     } catch (err) {
       setResults([]);
       setLatencyMs(null);
+      setCandidateCount(null);
+      setFilteredWatchedCount(null);
       setLastQuery(null);
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
     } finally {
@@ -176,9 +186,11 @@ export default function Home() {
         <SearchBar
           query={query}
           topK={topK}
+          includeWatched={includeWatched}
           isLoading={isLoading}
           onQueryChange={setQuery}
           onTopKChange={setTopK}
+          onIncludeWatchedChange={setIncludeWatched}
           onSubmit={handleRecommend}
         />
 
@@ -217,6 +229,9 @@ export default function Home() {
           <RecommendationList
           results={results}
           latencyMs={latencyMs}
+          candidateCount={candidateCount}
+          filteredWatchedCount={filteredWatchedCount}
+          includeWatched={includeWatched}
           userId={DEMO_USER_ID}
           query={lastQuery}
           onPreferenceSaved={handlePreferenceSaved}

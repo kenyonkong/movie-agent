@@ -27,10 +27,13 @@ class RecommenderService:
     - Retrieves a larger candidate pool from vector search
     - Loads user preference memory from SQLite
     - Reranks candidates using semantic score + memory signals
+
+    Day 9 version:
+    - Added optionally filters watched movies
     """
 
-    CANDIDATE_MULTIPLIER = 6 # Retrieve this many candidates from vector search before reranking
-    MIN_CANDIDATE_POOL = 30 # Always retrieve at least this many candidates for reranking
+    CANDIDATE_MULTIPLIER = 8 # Retrieve this many candidates from vector search before reranking
+    MIN_CANDIDATE_POOL = 40 # Always retrieve at least this many candidates for reranking
 
     def __init__(self) -> None:
         self.vector_store = MovieVectorStore()
@@ -43,7 +46,8 @@ class RecommenderService:
             db: Session, 
             user_id: str, 
             query: str, 
-            top_k: int = 5) -> RecommendResponse:
+            top_k: int = 5, 
+            include_watched: bool = False) -> RecommendResponse:
         """
         Return movie recommendations for a natural-language query.
         """
@@ -58,8 +62,23 @@ class RecommenderService:
 
         user_memory = self.memory_service.get_reranking_memory(db=db, user_id=user_id)
 
-        reranked_results = self.reranker.rerank(
+        filtered_candidates, filtered_watched_count = self.reranker.filter_watched_candidates(
             candidates=raw_candidates,
+            user_memory=user_memory,
+            include_watched=include_watched,
+        )
+
+        # Fallback:
+        # If filtering watched movies removes too many results, use the original
+        # candidate pool so the API can still return something useful.
+        candidates_for_reranking = (
+            filtered_candidates
+            if len(filtered_candidates) >= top_k
+            else raw_candidates
+        )
+
+        reranked_results = self.reranker.rerank(
+            candidates=candidates_for_reranking,
             user_memory=user_memory,
             top_k=top_k,
         )
@@ -75,6 +94,11 @@ class RecommenderService:
             user_id=user_id,
             query=query,
             top_k=top_k,
+
+            include_watched=include_watched,
+            candidate_count=len(raw_candidates),
+            filtered_watched_count=filtered_watched_count,
+
             results=recommendations,
             latency_ms=round(latency_ms, 2),
         )
