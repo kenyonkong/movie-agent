@@ -32,8 +32,8 @@ class RecommenderService:
     - Added optionally filters watched movies
     """
 
-    CANDIDATE_MULTIPLIER = 8 # Retrieve this many candidates from vector search before reranking
-    MIN_CANDIDATE_POOL = 40 # Always retrieve at least this many candidates for reranking
+    CANDIDATE_MULTIPLIER = 10 # Retrieve this many candidates from vector search before reranking
+    MIN_CANDIDATE_POOL = 50 # Always retrieve at least this many candidates for reranking
 
     def __init__(self) -> None:
         self.vector_store = MovieVectorStore()
@@ -113,6 +113,9 @@ class RecommenderService:
         semantic_score = float(result.get("semantic_score", 0.0))
         preference_score = float(result.get("preference_score", 0.0))
 
+        novelty_score = float(result.get("novelty_score", 0.0))
+        diversity_penalty = float(result.get("diversity_penalty", 0.0))
+
         document = result.get("document", "") or ""
         document_preview = self._make_document_preview(document)
 
@@ -128,11 +131,17 @@ class RecommenderService:
         if preference not in ("like", "dislike"):
             preference = None
 
+        popularity = self._safe_float(result.get("popularity"))
+        vote_average = self._safe_float(result.get("vote_average"))
+        vote_count = self._safe_int(result.get("vote_count"))
+
         reason = self._generate_reranked_reason(
             title=title,
             genres=result.get("genres"),
             semantic_score=semantic_score,
             preference_score=preference_score,
+            novelty_score=novelty_score,
+            diversity_penalty=diversity_penalty,
             watched=watched,
             saved=saved,
         )
@@ -146,9 +155,14 @@ class RecommenderService:
             distance=round(distance, 4),
             semantic_score=round(semantic_score, 4),
             preference_score=round(preference_score, 4),
+            novelty_score=round(novelty_score, 4),
+            diversity_penalty=round(diversity_penalty, 4),
             preference=preference,
             watched=watched,
             saved=saved,
+            popularity=popularity,
+            vote_average=vote_average,
+            vote_count=vote_count,
             reason=reason,
             document_preview=document_preview,
             ranking_signals=result.get("ranking_signals", {}),
@@ -174,6 +188,8 @@ class RecommenderService:
         genres: str | None,
         semantic_score: float,
         preference_score: float,
+        novelty_score: float,
+        diversity_penalty: float,
         watched: bool,
         saved: bool,
     ) -> str:
@@ -199,6 +215,19 @@ class RecommenderService:
                 f"(preference score: {preference_score:.2f})."
             )
 
+        
+        if novelty_score > 0.3:
+            parts.append(
+                f"It received a small novelty boost because it is less obvious "
+                f"than very high-popularity candidates."
+            )
+
+        if diversity_penalty > 0:
+            parts.append(
+                f"It received a diversity penalty because its genres overlap "
+                f"with other selected results."
+            )
+
         if watched:
             parts.append(
                 "It was also penalized because you already marked it as watched."
@@ -210,3 +239,21 @@ class RecommenderService:
             )
 
         return " ".join(parts)
+
+    def _safe_float(self, value: Any) -> float | None:
+        if value is None:
+            return None
+
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+    
+    def _safe_int(self, value: Any) -> int | None:
+        if value is None:
+            return None
+
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None

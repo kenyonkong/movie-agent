@@ -11,10 +11,16 @@ export type MovieRecommendation = {
     distance: number;
     semantic_score: number;
     preference_score: number;
+    novelty_score: number;
+    diversity_penalty: number;
 
     preference: PreferenceValue | null;
     watched: boolean;
     saved: boolean;
+
+    popularity: number | null;
+    vote_average: number | null;
+    vote_count: number | null;
 
     reason: string;
     document_preview: string;

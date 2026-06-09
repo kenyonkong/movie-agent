@@ -310,6 +310,9 @@ def save_processed_movies(clean_df: pd.DataFrame) -> None:
                     int(row["release_year"]) if pd.notna(row["release_year"]) else None
                 ), 
                 "genres": row["genres_clean"],
+                "popularity": float(row["popularity"]) if pd.notna(row["popularity"]) else 0.0,
+                "vote_average": float(row["vote_average"]) if pd.notna(row["vote_average"]) else 0.0,
+                "vote_count": int(row["vote_count"]) if pd.notna(row["vote_count"]) else 0,
                 "document": row["document"],
             }
             f.write(json.dumps(record, ensure_ascii=False) + "\n")

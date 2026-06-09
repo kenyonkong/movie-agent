@@ -124,6 +124,28 @@ saved: boolean
 
 This avoids duplicate feedback rows and prevents repeated clicks from inflating genre counts.
 
+## Diversity and Novelty
+
+The Day 10 reranker adds two recommendation-quality signals.
+
+### Novelty
+
+Novelty is a small boost for less obvious movies. It is estimated from movie popularity and vote count.
+
+The goal is not to recommend obscure movies blindly, but to slightly prefer less obvious candidates when relevance is similar.
+
+### Diversity
+
+Diversity is applied during final top-k selection.
+
+The reranker greedily selects one movie at a time. For each remaining candidate, it computes a genre-overlap penalty against movies already selected.
+
+This reduces repetitive recommendation lists where every result belongs to the same genre cluster.
+
+### Why This Matters
+
+Pure semantic retrieval often returns many near-duplicates. A recommendation system should provide a useful set of options, not only the nearest vectors.
+
 ## Why Current Preference State Instead of Event Log?
 
 An event-log design would store every click:

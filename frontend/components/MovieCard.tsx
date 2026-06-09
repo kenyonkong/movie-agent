@@ -32,6 +32,12 @@ export function MovieCard({ movie, rank, userId, query, onPreferenceSaved }: Mov
             {movie.genres ? ` · ${movie.genres}` : ""}
           </p>
 
+          <p className="mt-2 text-xs text-slate-500">
+            {movie.vote_average !== null && `Rating: ${movie.vote_average.toFixed(1)}`}
+            {movie.vote_count !== null && ` · Votes: ${movie.vote_count}`}
+            {movie.popularity !== null && ` · Popularity: ${movie.popularity.toFixed(1)}`}
+          </p>
+
           <div className="mt-3 flex flex-wrap gap-2">
             {movie.preference === "like" && (
               <span className="rounded-full border border-cyan-400/50 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-300">
@@ -75,6 +81,14 @@ export function MovieCard({ movie, rank, userId, query, onPreferenceSaved }: Mov
 
           <div className="text-xs text-slate-400">
             Preference: {movie.preference_score.toFixed(2)}
+          </div>
+
+          <div className="text-xs text-slate-400">
+            Novelty: {movie.novelty_score.toFixed(2)}
+          </div>
+
+          <div className="text-xs text-slate-400">
+            Diversity penalty: {movie.diversity_penalty.toFixed(2)}
           </div>
         </div>
       </div>

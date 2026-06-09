@@ -107,6 +107,9 @@ class MovieVectorStore:
                     "title": metadata.get("title"),
                     "release_year": metadata.get("release_year"),
                     "genres": metadata.get("genres"),
+                    "popularity": metadata.get("popularity", 0.0),
+                    "vote_average": metadata.get("vote_average", 0.0),
+                    "vote_count": metadata.get("vote_count", 0),
                     "distance": distance,
                     "document": document,
                 }

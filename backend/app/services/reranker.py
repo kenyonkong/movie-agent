@@ -14,11 +14,18 @@ class MovieReranker:
     Day 9 version:
     - watched movie filtering or penalty added to Day 8 version
 
+     Day 10 version:
+    - novelty score from popularity/vote_count
+    - diversity penalty based on genre overlap with already selected movies
+
     This is a transparent heuristic reranker, not a learned model.
     """
 
     SEMANTIC_WEIGHT = 0.75
     PREFERENCE_WEIGHT = 0.15
+    NOVELTY_WEIGHT = 0.1
+    DIVERSITY_WEIGHT = 0.12
+
     SAVED_WEIGHT = 0.1
     WATCHED_PENALTY = 0.15
 
@@ -47,8 +54,6 @@ class MovieReranker:
         return filtered_candidates, filtered_watched_count
 
 
-
-
     def rerank(
         self,
         candidates: list[dict[str, Any]],
@@ -65,11 +70,12 @@ class MovieReranker:
         # Sort by final score descending
 
         reranked_candidates.sort(
-            key=lambda x: x["final_score"],
+            key=lambda x: x["base_score"],
             reverse=True
         )
-        return reranked_candidates[:top_k]
+        return self._select_diverse_top_k(reranked_candidates, top_k)
     
+
     def _score_candidate(
             self,
             candidate: dict[str, Any],
@@ -88,6 +94,11 @@ class MovieReranker:
             disliked_genres = user_memory.get("disliked_genres", {}),
         )
 
+        novelty_score = self._compute_novelty_score(
+            popularity=float(candidate.get("popularity", 0.0) or 0.0),
+            vote_count=float(candidate.get("vote_count", 0) or 0),
+        )
+
         watched = movie_id in user_memory.get("watched_movie_ids", set())
         saved = movie_id in user_memory.get("saved_movie_ids", set())
 
@@ -103,33 +114,144 @@ class MovieReranker:
         saved_boost = self.SAVED_WEIGHT if saved else 0.0
         watched_penalty = self.WATCHED_PENALTY if watched else 0.0
 
-        final_score = (
+        base_score = (
             semantic_score * self.SEMANTIC_WEIGHT
             + preference_score * self.PREFERENCE_WEIGHT
+            + novelty_score * self.NOVELTY_WEIGHT
             + saved_boost
             - watched_penalty
         )
 
-        final_score = max(0.0, min(1.0, final_score))
+        base_score = max(0.0, min(1.0, base_score))
 
         candidate["semantic_score"] = round(semantic_score, 4)
         candidate["preference_score"] = round(preference_score, 4)
+        candidate["novelty_score"] = round(novelty_score, 4)
         candidate["saved"] = saved
         candidate["watched"] = watched
         candidate["preference"] = preference
-        candidate["final_score"] = round(final_score, 4)
+        candidate["base_score"] = round(base_score, 4)
+
+        # to be filled later during diversity-aware selection
+        candidate["diversity_penalty"] = 0.0
+        candidate["final_score"] = round(base_score, 4)
+
         candidate["ranking_signals"] = {
             "semantic_score": round(semantic_score, 4),
             "preference_score": round(preference_score, 4),
+            "novelty_score": round(novelty_score, 4),
             "saved_boost": round(saved_boost, 4),
             "watched_penalty": round(watched_penalty, 4),
-            "final_score": round(final_score, 4),
+            "diversity_penalty": 0.0,
+            "base_score": round(base_score, 4),
+            "final_score": round(base_score, 4),
             "watched": watched,
             "saved": saved,
             "preference": preference or "none",
         }
         return candidate 
     
+
+    def _select_diverse_top_k(
+            self,
+            candidates: list[dict[str, Any]],
+            top_k: int,
+    ) -> list[dict[str, Any]]:
+        """
+        Select top-k candidates while penalizing genre overlap.
+
+        This is a greedy diversification algorithm.
+
+        At each step:
+        - compute diversity penalty against already selected movies
+        - subtract the penalty from the base score
+        - select the candidate with the best adjusted score
+        """
+        selected: list[dict[str, Any]] = []
+        remaining = candidates.copy()
+
+        while remaining and len(selected) < top_k:
+            best_candidate = None
+            best_adjusted_score = float("-inf")
+            best_penalty = 0.0
+
+            for candidate in remaining:
+                diversity_penalty = self._compute_diversity_penalty(candidate, selected)
+                adjusted_score = candidate["base_score"] - diversity_penalty
+
+                if adjusted_score > best_adjusted_score:
+                    best_adjusted_score = adjusted_score
+                    best_candidate = candidate
+                    best_penalty = diversity_penalty
+
+            if best_candidate is None:
+                break
+
+            final_score = max(0.0, min(1.0, best_adjusted_score))
+
+            best_candidate["diversity_penalty"] = round(best_penalty, 4)
+            best_candidate["final_score"] = round(final_score, 4)
+
+            reranking_signals = best_candidate.get("ranking_signals", {})
+            reranking_signals["diversity_penalty"] = round(best_penalty, 4)
+            reranking_signals["final_score"] = round(final_score, 4)
+            best_candidate["ranking_signals"] = reranking_signals
+
+            selected.append(best_candidate)
+            remaining.remove(best_candidate)
+
+        return selected
+    
+
+
+    def _compute_diversity_penalty(
+        self,
+        candidate: dict[str, Any],
+        selected: list[dict[str, Any]],
+    ) -> float:
+        """
+        Penalize candidates that share many genres with already selected movies.
+
+        The penalty is based on maximum Jaccard similarity between the candidate's
+        genres and any selected movie's genres.
+
+        Jaccard similarity:
+            intersection_size / union_size
+
+        Example:
+            Candidate genres: {Drama, Sci-Fi}
+            Selected genres:  {Drama, Romance}
+            intersection = {Drama}
+            union = {Drama, Sci-Fi, Romance}
+            similarity = 1 / 3
+        """
+        if not selected:
+            return 0.0
+        
+        candidate_genres = set(self._parse_genres(candidate.get("genres", "") or ""))
+
+        if not candidate_genres:
+            return 0.0
+
+        max_similarity = 0.0
+
+        for selected_movie in selected:
+            selected_genres = set(self._parse_genres(selected_movie.get("genres", "") or ""))
+            if not selected_genres:
+                continue
+            
+            intersection_size = len(candidate_genres & selected_genres)
+            union_size = len(candidate_genres | selected_genres)
+
+            if union_size == 0:
+                continue
+
+            jaccard = intersection_size / union_size
+            max_similarity = max(max_similarity, jaccard)
+        
+        return max_similarity * self.DIVERSITY_WEIGHT
+
+
 
     def _distance_to_score(self, distance: float) -> float:
         """
@@ -175,6 +297,41 @@ class MovieReranker:
         # Normalize to roughly [-1, 1]
         return max(-1.0, min(1.0, raw_score))
     
+
+    def _compute_novelty_score(
+        self,
+        popularity: float,
+        vote_count: float,
+    ) -> float:
+        """
+        Compute a small novelty score.
+
+        Idea:
+        - Extremely popular movies are less novel.
+        - Less popular movies are more novel.
+        - But movies with almost no votes should not get maximum novelty,
+          because they may be low-quality or too obscure.
+
+        This is a heuristic, not a perfect measure.
+        """
+        popularity = max(0.0, popularity)
+        vote_count = max(0.0, vote_count)
+
+        # Popularity penalty:
+        # popularity around 0 gives high novelty.
+        # very high popularity gives low novelty.
+        popularity_novelty = 1.0 / (1.0 + popularity / 50.0)
+
+        # Confidence factor:
+        # very low vote_count gives lower confidence.
+        # this prevents extremely obscure movies from always winning.
+        vote_confidence = min(1.0, vote_count / 500.0)
+
+        novelty_score = popularity_novelty * vote_confidence
+
+        return max(0.0, min(1.0, novelty_score))
+
+
 
     def _parse_genres(self, genres: str) -> list[str]:
         """

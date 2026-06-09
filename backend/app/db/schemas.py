@@ -44,6 +44,11 @@ class MovieRecommendation(BaseModel):
     # User-memory contribution from liked/disliked movies (positive means more similar, negative means less similar)
     preference_score: float
 
+    # small boost for novelty
+    novelty_score: float
+
+    diversity_penalty: float
+
     # Current perference state. "like", "dislike", or None if no feedback given yet.
     preference: PreferenceValue | None = None
 
@@ -51,6 +56,10 @@ class MovieRecommendation(BaseModel):
     watched: bool = False
     # whether the movie was already saved
     saved: bool = False
+
+    popularity: float | None = None
+    vote_average: float | None = None
+    vote_count: int | None = None
 
     reason: str
     document_preview: str
