@@ -9,6 +9,9 @@ venv/
 backend/movie_agent.db
 backend/*.db
 
+# OpenAI API key
+backend/.env
+
 # Node / Next.js
 node_modules/
 .next/

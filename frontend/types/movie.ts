@@ -33,6 +33,7 @@ export type RecommendRequest = {
     query: string;
     top_k: number;
     include_watched: boolean;
+    use_llm_explanations: boolean;
 };
 
 export type RecommendResponse = {
@@ -43,6 +44,8 @@ export type RecommendResponse = {
     included_watched: boolean;
     candidate_count: number;
     filtered_watched_count: number;
+
+    explanation_provider: string;
 
     results: MovieRecommendation[];
     latency_ms: number;

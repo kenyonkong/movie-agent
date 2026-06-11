@@ -21,6 +21,11 @@ export default function Home() {
   const [candidateCount, setCandidateCount] = useState<number | null>(null);
   const [filteredWatchedCount, setFilteredWatchedCount] = useState<number | null>(null);
 
+  const [useLlmExplanations, setUseLlmExplanations] = useState(false);
+  const [explanationProvider, setExplanationProvider] = useState<string | null>(
+    null
+  );
+
   const [topK, setTopK] = useState(5);
   const [results, setResults] = useState<MovieRecommendation[]>([]);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
@@ -56,6 +61,7 @@ export default function Home() {
         query: trimmedQuery,
         include_watched: includeWatched,
         top_k: topK,
+        use_llm_explanations: useLlmExplanations,
       });
       // setClientLatencyMs(performance.now() - startTime);
 
@@ -63,12 +69,14 @@ export default function Home() {
       setLatencyMs(resonse.latency_ms);
       setCandidateCount(resonse.candidate_count);
       setFilteredWatchedCount(resonse.filtered_watched_count);
+      setExplanationProvider(resonse.explanation_provider);
       setLastQuery(trimmedQuery);
     } catch (err) {
       setResults([]);
       setLatencyMs(null);
       setCandidateCount(null);
       setFilteredWatchedCount(null);
+      setExplanationProvider(null);
       setLastQuery(null);
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
     } finally {
@@ -187,10 +195,12 @@ export default function Home() {
           query={query}
           topK={topK}
           includeWatched={includeWatched}
+          useLlmExplanations={useLlmExplanations}
           isLoading={isLoading}
           onQueryChange={setQuery}
           onTopKChange={setTopK}
           onIncludeWatchedChange={setIncludeWatched}
+          onUseLlmExplanationsChange={setUseLlmExplanations}
           onSubmit={handleRecommend}
         />
 
@@ -232,6 +242,7 @@ export default function Home() {
           candidateCount={candidateCount}
           filteredWatchedCount={filteredWatchedCount}
           includeWatched={includeWatched}
+          explanationProvider={explanationProvider}
           userId={DEMO_USER_ID}
           query={lastQuery}
           onPreferenceSaved={handlePreferenceSaved}

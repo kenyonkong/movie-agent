@@ -30,7 +30,8 @@ Example request:
   "user_id": "demo_user",
   "query": "I want something like Her, lonely and futuristic, but not too slow",
   "top_k": 5,
-  "include_watched": false
+  "include_watched": false,
+  "use_llm_explanations": true
 }
 ```
 
@@ -42,8 +43,9 @@ Example response:
   "query": "I want something like Her, lonely and futuristic, but not too slow",
   "top_k": 5,
   "include_watched": false,
-  "candidate_count": 40,
+  "candidate_count": 50,
   "filtered_watched_count": 1,
+  "explanation_provider": "openai:gpt-5.4-mini",
   "results": [
     {
       "movie_id": "123",

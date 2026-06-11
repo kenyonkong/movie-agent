@@ -95,7 +95,7 @@ export function MovieCard({ movie, rank, userId, query, onPreferenceSaved }: Mov
 
       <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-950 p-4">
         <p className="mb-2 text-sm font-semibold text-slate-200">
-          Why this was recommended
+          Explanation
         </p>
         <p className="text-sm leading-6 text-slate-400">{movie.reason}</p>
       </div>

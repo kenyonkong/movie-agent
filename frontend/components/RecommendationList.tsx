@@ -7,6 +7,7 @@ type RecommendationListProps = {
     candidateCount: number | null;
     filteredWatchedCount: number | null;
     includeWatched: boolean;
+    explanationProvider: string | null;
     userId: string;
     query: string | null;
     onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
@@ -20,6 +21,7 @@ export function RecommendationList({
     includeWatched,
     userId,
     query,
+    explanationProvider,
     onPreferenceSaved,
 }: RecommendationListProps) {
     if (results.length === 0) {
@@ -63,6 +65,12 @@ export function RecommendationList({
         )}
       </div>
 
+      {explanationProvider && (
+        <p className="rounded-full border border-cyan-800 bg-cyan-950/40 px-4 py-2 text-sm text-cyan-200">
+          Explanations provided by: {explanationProvider}
+        </p>
+      )}
+      
       <div className="space-y-5">
         {results.map((movie, index) => (
           <MovieCard

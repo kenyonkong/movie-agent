@@ -2,10 +2,12 @@ type SearchBarProps = {
     query: string;
     topK: number;
     includeWatched: boolean;
+    useLlmExplanations: boolean;
     isLoading: boolean;
     onQueryChange: (query: string) => void;
     onTopKChange: (topK: number) => void;
     onIncludeWatchedChange: (includeWatched: boolean) => void;
+    onUseLlmExplanationsChange: (useLlmExplanations: boolean) => void;
     onSubmit: () => void;
 };
 
@@ -21,10 +23,12 @@ export function SearchBar({
     query,
     topK,
     includeWatched,
+    useLlmExplanations,
     isLoading,
     onQueryChange,
     onTopKChange,
     onIncludeWatchedChange,
+    onUseLlmExplanationsChange,
     onSubmit,
 }: SearchBarProps) {
     function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -81,6 +85,15 @@ export function SearchBar({
                 className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
               />
               Include watched movies
+            </label>
+            <label className="flex items-center gap-3 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={useLlmExplanations}
+                onChange={(event) => onUseLlmExplanationsChange(event.target.checked)}
+                className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
+              />
+              Use LLM explanations
             </label>
           </div>
 
