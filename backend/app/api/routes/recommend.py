@@ -18,10 +18,11 @@ def recommend_movies(
     """
     Recommend movies from a natural-language user query.
 
-    Day 4 version:
+    Development version:
     - Uses semantic vector search
     - Returns top-k candidates
     - Includes simple non-LLM explanations
+    - Optionally uses LLM-generated explanations
     """
     try:
         return recommender.recommend(
@@ -30,6 +31,7 @@ def recommend_movies(
             query=request.query,
             top_k=request.top_k,
             include_watched=request.include_watched,
+            use_llm_explanation=request.use_llm_explanations,
         )
     except RuntimeError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
@@ -51,4 +53,6 @@ def recommend_debug() -> dict:
         "message": "Recommendation service is ready.",
         "reranked": "enabled",
         "watched_filtering": "configurable",
+        "explanation_provider": recommender.explanation_service.provider,
+        "explanation_model": recommender.explanation_service.model,
     }

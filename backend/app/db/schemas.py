@@ -27,6 +27,13 @@ class RecommendRequest(BaseModel):
         default=False,
         description="Whether to include movies the user has already watched in the recommendations.",
     )
+    use_llm_explanations: bool = Field(
+        default=False,
+        description=(
+            "Whether to generate explanations using the configured LLM provider. "
+            "If false, template explanations are used."
+        ),
+    )
 
 
 class MovieRecommendation(BaseModel):
@@ -75,6 +82,8 @@ class RecommendResponse(BaseModel):
     include_watched: bool
     candidate_count: int
     filtered_watched_count: int
+
+    explanation_provider: str
 
     results: list[MovieRecommendation]
     latency_ms: float

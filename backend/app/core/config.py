@@ -8,16 +8,24 @@ load_dotenv() # Load environment variables from .env file
 
 
 class Settings(BaseModel):
-    app_name: str = "Movie Agent API"
+    app_name: str = os.getenv("APP_NAME", "Movie Agent API")
     app_version: str = "0.1.0"
     environment: str = "development"
 
     # Embedding provider can be "local" or "openai"
     embedding_provider: str = os.getenv("EMBEDDING_PROVIDER", "local")
 
+    # Explanation provider can be "template" or "openai"
+    explanation_provider: str = os.getenv("EXPLANATION_PROVIDER", "template")
+
     # OpenAI settings
     openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
     openai_embedding_model: str = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+    
+    openai_explanation_model: str = os.getenv(
+        "OPENAI_EXPLANATION_MODEL", 
+        "gpt-5.4-mini"
+    )
 
     # Local embedding settings
     local_embedding_model : str = os.getenv("LOCAL_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")

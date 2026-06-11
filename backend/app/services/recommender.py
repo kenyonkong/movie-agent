@@ -8,6 +8,7 @@ from app.db.schemas import MovieRecommendation, RecommendResponse
 from app.services.vector_store import MovieVectorStore
 from app.services.reranker import MovieReranker
 from app.services.memory_service import MemoryService
+from app.services.explanation_service import ExplanationService
 
 
 
@@ -30,6 +31,9 @@ class RecommenderService:
 
     Day 9 version:
     - Added optionally filters watched movies
+
+    Day 11 version:
+    - Generates grounded explanations with template or OpenAI provider
     """
 
     CANDIDATE_MULTIPLIER = 10 # Retrieve this many candidates from vector search before reranking
@@ -39,7 +43,7 @@ class RecommenderService:
         self.vector_store = MovieVectorStore()
         self.reranker = MovieReranker()
         self.memory_service = MemoryService()
-    
+        self.explanation_service = ExplanationService()
 
     def recommend(
             self,
@@ -47,7 +51,9 @@ class RecommenderService:
             user_id: str, 
             query: str, 
             top_k: int = 5, 
-            include_watched: bool = False) -> RecommendResponse:
+            include_watched: bool = False, 
+            use_llm_explanation: bool = False,
+            ) -> RecommendResponse:
         """
         Return movie recommendations for a natural-language query.
         """
@@ -83,10 +89,23 @@ class RecommenderService:
             top_k=top_k,
         )
 
+        # Add document_preview before passing to explanation service.
+        for result in reranked_results:
+            result["document_preview"] = self._make_document_preview(
+                result.get("document", "") or ""
+            )
+
+        explanations = self.explanation_service.generate_explanations(
+            query=query,
+            recommendations=reranked_results, 
+            use_llm_explanation=use_llm_explanation
+        )
+
         recommendations = [
-            self._format_recommendation(result)
-            for result in reranked_results
+            self._format_recommendation(result, explanation)
+            for result, explanation in zip(reranked_results, explanations)
         ]
+
 
         latency_ms = (time.perf_counter() - start_time) * 1000 # Convert to milliseconds
 
@@ -98,13 +117,14 @@ class RecommenderService:
             include_watched=include_watched,
             candidate_count=len(raw_candidates),
             filtered_watched_count=filtered_watched_count,
+            explanation_provider=self.explanation_service.get_provider_name(use_llm_explanation=use_llm_explanation),
 
             results=recommendations,
             latency_ms=round(latency_ms, 2),
         )
 
 
-    def _format_recommendation(self, result: dict[str, Any]) -> MovieRecommendation:
+    def _format_recommendation(self, result: dict[str, Any], explanation: str) -> MovieRecommendation:
         """
         Convert raw vector search result into API response format.
         """
@@ -115,9 +135,6 @@ class RecommenderService:
 
         novelty_score = float(result.get("novelty_score", 0.0))
         diversity_penalty = float(result.get("diversity_penalty", 0.0))
-
-        document = result.get("document", "") or ""
-        document_preview = self._make_document_preview(document)
 
         title = result.get("title") or "Unknown Title"
         release_year = result.get("release_year")
@@ -130,21 +147,12 @@ class RecommenderService:
         preference = result.get("preference")
         if preference not in ("like", "dislike"):
             preference = None
+        
 
         popularity = self._safe_float(result.get("popularity"))
         vote_average = self._safe_float(result.get("vote_average"))
         vote_count = self._safe_int(result.get("vote_count"))
 
-        reason = self._generate_reranked_reason(
-            title=title,
-            genres=result.get("genres"),
-            semantic_score=semantic_score,
-            preference_score=preference_score,
-            novelty_score=novelty_score,
-            diversity_penalty=diversity_penalty,
-            watched=watched,
-            saved=saved,
-        )
 
         return MovieRecommendation(
             movie_id=str(result.get("id")),
@@ -163,8 +171,8 @@ class RecommenderService:
             popularity=popularity,
             vote_average=vote_average,
             vote_count=vote_count,
-            reason=reason,
-            document_preview=document_preview,
+            reason=explanation,
+            document_preview=result.get("document_preview", ""),
             ranking_signals=result.get("ranking_signals", {}),
         )
        
@@ -181,64 +189,6 @@ class RecommenderService:
 
         return document[:max_chars].rstrip() + "..."
     
-
-    def _generate_reranked_reason(
-        self, 
-        title: str, 
-        genres: str | None,
-        semantic_score: float,
-        preference_score: float,
-        novelty_score: float,
-        diversity_penalty: float,
-        watched: bool,
-        saved: bool,
-    ) -> str:
-        """
-        Generate a transparent non-LLM explanation for the reranked result.
-        """
-        parts: list[str] = [
-            f"{title} was retrieved because it semantically matches your query "
-            f"(semantic score: {semantic_score:.2f})."
-]
-
-        if genres:
-            parts.append(f"It belongs to genres such as {genres}.")
-
-        if preference_score > 0:
-            parts.append(
-                f"It received a preference boost based on your liked genres "
-                f"(preference score: {preference_score:.2f})."
-            )
-        elif preference_score < 0:
-            parts.append(
-                f"It was penalized because it overlaps with genres you disliked "
-                f"(preference score: {preference_score:.2f})."
-            )
-
-        
-        if novelty_score > 0.3:
-            parts.append(
-                f"It received a small novelty boost because it is less obvious "
-                f"than very high-popularity candidates."
-            )
-
-        if diversity_penalty > 0:
-            parts.append(
-                f"It received a diversity penalty because its genres overlap "
-                f"with other selected results."
-            )
-
-        if watched:
-            parts.append(
-                "It was also penalized because you already marked it as watched."
-            )
-
-        if saved:
-            parts.append(
-                "It received a small boost because you previously saved it."
-            )
-
-        return " ".join(parts)
 
     def _safe_float(self, value: Any) -> float | None:
         if value is None:
