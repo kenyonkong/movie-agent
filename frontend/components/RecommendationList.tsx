@@ -1,4 +1,4 @@
-import type { MovieRecommendation, UserMoviePreferenceResponse} from "@/types/movie";
+import type { MovieIntent, MovieRecommendation, UserMoviePreferenceResponse} from "@/types/movie";
 import { MovieCard } from "./MovieCard";
 
 type RecommendationListProps = {
@@ -8,6 +8,9 @@ type RecommendationListProps = {
     filteredWatchedCount: number | null;
     includeWatched: boolean;
     explanationProvider: string | null;
+    intentProvider: string | null;
+    retrievalQuery: string | null;
+    parsedIntent: MovieIntent | null;
     userId: string;
     query: string | null;
     onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
@@ -22,6 +25,9 @@ export function RecommendationList({
     userId,
     query,
     explanationProvider,
+    intentProvider,
+    retrievalQuery,
+    parsedIntent,
     onPreferenceSaved,
 }: RecommendationListProps) {
     if (results.length === 0) {
@@ -71,6 +77,88 @@ export function RecommendationList({
         </p>
       )}
       
+      {parsedIntent && (
+        <section className="mb-5 rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
+          <div className="mb-3">
+            <h3 className="text-lg font-bold text-slate-100">
+              Parsed Intent
+            </h3>
+            <p className="mt-1 text-sm text-slate-400">
+              The raw query was converted into structured intent before vector retrieval.
+            </p>
+          </div>
+
+          <div className="mb-3 flex flex-wrap gap-2">
+            {intentProvider && (
+              <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
+                Intent: {intentProvider}
+              </span>
+            )}
+
+            {retrievalQuery && (
+              <span className="rounded-full border border-cyan-700 bg-cyan-950/40 px-3 py-1 text-xs text-cyan-200">
+                Retrieval query: {retrievalQuery}
+              </span>
+            )}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+              <p className="mb-2 text-sm font-semibold text-cyan-300">
+                Reference movies
+              </p>
+              <p className="text-sm text-slate-400">
+                {parsedIntent.reference_movies.length > 0
+                  ? parsedIntent.reference_movies.join(", ")
+                  : "None"}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+              <p className="mb-2 text-sm font-semibold text-purple-300">
+                Moods / tone
+              </p>
+              <p className="text-sm text-slate-400">
+                {[...parsedIntent.moods, ...parsedIntent.tone].length > 0
+                  ? [...parsedIntent.moods, ...parsedIntent.tone].join(", ")
+                  : "None"}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+              <p className="mb-2 text-sm font-semibold text-green-300">
+                Themes / genres
+              </p>
+              <p className="text-sm text-slate-400">
+                {[...parsedIntent.themes, ...parsedIntent.genres].length > 0
+                  ? [...parsedIntent.themes, ...parsedIntent.genres].join(", ")
+                  : "None"}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+              <p className="mb-2 text-sm font-semibold text-red-300">
+                Avoid / constraints
+              </p>
+              <p className="text-sm text-slate-400">
+                {[...parsedIntent.avoid, ...parsedIntent.constraints].length > 0
+                  ? [...parsedIntent.avoid, ...parsedIntent.constraints].join(", ")
+                  : "None"}
+              </p>
+            </div>
+          </div>
+
+          <details className="mt-3">
+            <summary className="cursor-pointer text-sm font-medium text-cyan-300">
+              Show raw intent JSON
+            </summary>
+            <pre className="mt-3 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-xs leading-6 text-slate-400">
+              {JSON.stringify(parsedIntent, null, 2)}
+            </pre>
+          </details>
+        </section>
+      )}
+
       <div className="space-y-5">
         {results.map((movie, index) => (
           <MovieCard

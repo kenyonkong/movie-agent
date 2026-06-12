@@ -1,6 +1,27 @@
 export type FeedbackAction = 'like' | 'dislike' | 'watched' | 'save';
 export type PreferenceValue = "like" | "dislike";
 
+
+export type MovieIntent = {
+  raw_query: string;
+  query_rewrite: string;
+
+  reference_movies: string[];
+  moods: string[];
+  themes: string[];
+  genres: string[];
+
+  pacing: string | null;
+  tone: string[];
+
+  avoid: string[];
+  constraints: string[];
+
+  confidence: number;
+  parser_notes: string;
+};
+
+
 export type MovieRecommendation = {
     movie_id: string;
     title: string;
@@ -34,17 +55,20 @@ export type RecommendRequest = {
     top_k: number;
     include_watched: boolean;
     use_llm_explanations: boolean;
+    use_llm_intent: boolean;
 };
 
 export type RecommendResponse = {
     user_id: string;
     query: string;
-    top_k: number;
+    retrieval_query: string;
+    parsed_intent: MovieIntent;
+    intent_provider: string;
 
+    top_k: number;
     included_watched: boolean;
     candidate_count: number;
     filtered_watched_count: number;
-
     explanation_provider: string;
 
     results: MovieRecommendation[];

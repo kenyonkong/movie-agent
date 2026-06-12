@@ -9,6 +9,7 @@ from app.services.vector_store import MovieVectorStore
 from app.services.reranker import MovieReranker
 from app.services.memory_service import MemoryService
 from app.services.explanation_service import ExplanationService
+from app.services.intent_parser import IntentParserService
 
 
 
@@ -44,6 +45,7 @@ class RecommenderService:
         self.reranker = MovieReranker()
         self.memory_service = MemoryService()
         self.explanation_service = ExplanationService()
+        self.intent_parser = IntentParserService()
 
     def recommend(
             self,
@@ -53,6 +55,7 @@ class RecommenderService:
             top_k: int = 5, 
             include_watched: bool = False, 
             use_llm_explanation: bool = False,
+            use_llm_intent: bool = False,
             ) -> RecommendResponse:
         """
         Return movie recommendations for a natural-language query.
@@ -64,9 +67,21 @@ class RecommenderService:
         
         candidate_k = max(top_k * self.CANDIDATE_MULTIPLIER, self.MIN_CANDIDATE_POOL)
 
-        raw_candidates = self.vector_store.search(query, top_k=candidate_k)
+        parsed_intent = self.intent_parser.parse_intent(
+            query=query, 
+            use_llm_intent=use_llm_intent,
+        )
+        retrieval_query = parsed_intent.query_rewrite.strip() or query
 
-        user_memory = self.memory_service.get_reranking_memory(db=db, user_id=user_id)
+        raw_candidates = self.vector_store.search(
+            retrieval_query, 
+            top_k=candidate_k
+        )
+
+        user_memory = self.memory_service.get_reranking_memory(
+            db=db,
+            user_id=user_id
+        )
 
         filtered_candidates, filtered_watched_count = self.reranker.filter_watched_candidates(
             candidates=raw_candidates,
@@ -83,10 +98,26 @@ class RecommenderService:
             else raw_candidates
         )
 
+        print("=== Before rerank ===")
+        for c in candidates_for_reranking[:20]:
+            print(c["title"], c["genres"], c["distance"])
+
+
         reranked_results = self.reranker.rerank(
             candidates=candidates_for_reranking,
             user_memory=user_memory,
             top_k=top_k,
+        )
+
+        print("=== After score sort ===")
+        for c in reranked_results[:20]:
+            print(
+                c["title"],
+                c["genres"],
+                c["semantic_score"],
+                c["preference_score"],
+                c["novelty_score"],
+                c["base_score"],
         )
 
         # Add document_preview before passing to explanation service.
@@ -95,8 +126,13 @@ class RecommenderService:
                 result.get("document", "") or ""
             )
 
+        explanation_query = (
+            f"Original user query: {query}\n"
+            f"Parsed retrieval query: {retrieval_query}"
+        )
+        
         explanations = self.explanation_service.generate_explanations(
-            query=query,
+            query=explanation_query,
             recommendations=reranked_results, 
             use_llm_explanation=use_llm_explanation
         )
@@ -112,8 +148,11 @@ class RecommenderService:
         return RecommendResponse(
             user_id=user_id,
             query=query,
-            top_k=top_k,
+            retrieval_query=retrieval_query,
+            parsed_intent=parsed_intent,
+            intent_provider=self.intent_parser.get_provider_name(use_llm_intent=use_llm_intent),
 
+            top_k=top_k,
             include_watched=include_watched,
             candidate_count=len(raw_candidates),
             filtered_watched_count=filtered_watched_count,

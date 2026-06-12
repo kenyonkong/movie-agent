@@ -32,6 +32,7 @@ def recommend_movies(
             top_k=request.top_k,
             include_watched=request.include_watched,
             use_llm_explanation=request.use_llm_explanations,
+            use_llm_intent=request.use_llm_intent,
         )
     except RuntimeError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
@@ -55,4 +56,6 @@ def recommend_debug() -> dict:
         "watched_filtering": "configurable",
         "explanation_provider": recommender.explanation_service.provider,
         "explanation_model": recommender.explanation_service.model,
+        "intent_provider": recommender.intent_parser.provider,
+        "intent_model": recommender.intent_parser.model,
     }

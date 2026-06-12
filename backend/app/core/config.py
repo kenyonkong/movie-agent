@@ -27,6 +27,10 @@ class Settings(BaseModel):
         "gpt-5.4-mini"
     )
 
+    # Intent parsing settings
+    intent_parser_provider: str = os.getenv("INTENT_PARSER_PROVIDER", "template")
+    openai_intent_model: str = os.getenv("OPENAI_INTENT_MODEL", "gpt-5.4-mini")
+
     # Local embedding settings
     local_embedding_model : str = os.getenv("LOCAL_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 

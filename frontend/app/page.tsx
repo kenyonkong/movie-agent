@@ -5,6 +5,7 @@ import { RecommendationList } from "@/components/RecommendationList";
 import { SearchBar } from "@/components/SearchBar";
 import { recommendMovies, getUserMemorySummary } from "@/lib/api";
 import type { 
+  MovieIntent,
   MovieRecommendation,
   UserMoviePreferenceResponse,
   UserMemorySummary,
@@ -20,6 +21,11 @@ export default function Home() {
   const [includeWatched, setIncludeWatched] = useState(false);
   const [candidateCount, setCandidateCount] = useState<number | null>(null);
   const [filteredWatchedCount, setFilteredWatchedCount] = useState<number | null>(null);
+
+  const [useLlmIntent, setUseLlmIntent] = useState(false);
+  const [intentProvider, setIntentProvider] = useState<string | null>(null);
+  const [retrievalQuery, setRetrievalQuery] = useState<string | null>(null);
+  const [parsedIntent, setParsedIntent] = useState<MovieIntent | null>(null);
 
   const [useLlmExplanations, setUseLlmExplanations] = useState(false);
   const [explanationProvider, setExplanationProvider] = useState<string | null>(
@@ -62,6 +68,7 @@ export default function Home() {
         include_watched: includeWatched,
         top_k: topK,
         use_llm_explanations: useLlmExplanations,
+        use_llm_intent: useLlmIntent,
       });
       // setClientLatencyMs(performance.now() - startTime);
 
@@ -69,6 +76,9 @@ export default function Home() {
       setLatencyMs(resonse.latency_ms);
       setCandidateCount(resonse.candidate_count);
       setFilteredWatchedCount(resonse.filtered_watched_count);
+      setIntentProvider(resonse.intent_provider);
+      setRetrievalQuery(resonse.retrieval_query);
+      setParsedIntent(resonse.parsed_intent);
       setExplanationProvider(resonse.explanation_provider);
       setLastQuery(trimmedQuery);
     } catch (err) {
@@ -76,6 +86,9 @@ export default function Home() {
       setLatencyMs(null);
       setCandidateCount(null);
       setFilteredWatchedCount(null);
+      setIntentProvider(null);
+      setRetrievalQuery(null);
+      setParsedIntent(null);
       setExplanationProvider(null);
       setLastQuery(null);
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
@@ -196,11 +209,13 @@ export default function Home() {
           topK={topK}
           includeWatched={includeWatched}
           useLlmExplanations={useLlmExplanations}
+          useLlmIntent={useLlmIntent}
           isLoading={isLoading}
           onQueryChange={setQuery}
           onTopKChange={setTopK}
           onIncludeWatchedChange={setIncludeWatched}
           onUseLlmExplanationsChange={setUseLlmExplanations}
+          onUseLlmIntentChange={setUseLlmIntent}
           onSubmit={handleRecommend}
         />
 
@@ -243,6 +258,9 @@ export default function Home() {
           filteredWatchedCount={filteredWatchedCount}
           includeWatched={includeWatched}
           explanationProvider={explanationProvider}
+          intentProvider={intentProvider}
+          retrievalQuery={retrievalQuery}
+          parsedIntent={parsedIntent}
           userId={DEMO_USER_ID}
           query={lastQuery}
           onPreferenceSaved={handlePreferenceSaved}

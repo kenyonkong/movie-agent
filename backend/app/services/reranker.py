@@ -21,10 +21,10 @@ class MovieReranker:
     This is a transparent heuristic reranker, not a learned model.
     """
 
-    SEMANTIC_WEIGHT = 0.75
-    PREFERENCE_WEIGHT = 0.15
-    NOVELTY_WEIGHT = 0.1
-    DIVERSITY_WEIGHT = 0.12
+    SEMANTIC_WEIGHT = 0.9
+    PREFERENCE_WEIGHT = 0.03
+    NOVELTY_WEIGHT = 0.01
+    DIVERSITY_WEIGHT = 0.03
 
     SAVED_WEIGHT = 0.1
     WATCHED_PENALTY = 0.15
@@ -74,6 +74,7 @@ class MovieReranker:
             reverse=True
         )
         return self._select_diverse_top_k(reranked_candidates, top_k)
+        # return reranked_candidates[:top_k]
     
 
     def _score_candidate(

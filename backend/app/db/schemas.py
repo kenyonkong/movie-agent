@@ -6,6 +6,31 @@ from typing import Literal
 FeedbackAction = Literal["like", "dislike", "watched", "save"]
 PreferenceValue = Literal["like", "dislike"]
 
+class MovieIntent(BaseModel):
+    """
+    Structured interpretation of the user's natural-language movie request.
+
+    This is produced by the intent parser and used to improve retrieval.
+    """
+
+    raw_query: str
+    query_rewrite: str
+
+    reference_movies: list[str] = Field(default_factory=list)
+    moods: list[str] = Field(default_factory=list)
+    themes: list[str] = Field(default_factory=list)
+    genres: list[str] = Field(default_factory=list)
+
+    pacing: str | None = None
+    tone: list[str] = Field(default_factory=list)
+
+    avoid: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
+
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    parser_notes: str = ""
+
+
 class RecommendRequest(BaseModel):
     user_id: str = Field(
         default="demo_user",
@@ -32,6 +57,13 @@ class RecommendRequest(BaseModel):
         description=(
             "Whether to generate explanations using the configured LLM provider. "
             "If false, template explanations are used."
+        ),
+    )
+    use_llm_intent: bool = Field(
+        default=False,
+        description=(
+            "Whether to parse the raw query into structured movie intent using "
+            "the configured intent parser provider."
         ),
     )
 
@@ -77,12 +109,14 @@ class MovieRecommendation(BaseModel):
 class RecommendResponse(BaseModel):
     user_id: str
     query: str
-    top_k: int
+    retrieval_query: str
+    parsed_intent: MovieIntent
+    intent_provider: str
 
+    top_k: int
     include_watched: bool
     candidate_count: int
     filtered_watched_count: int
-
     explanation_provider: str
 
     results: list[MovieRecommendation]
