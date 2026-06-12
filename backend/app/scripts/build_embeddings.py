@@ -68,10 +68,17 @@ def build_vector_database(reset: bool = True) -> None:
             metadata = {
                 "movie_id": int(record["movie_id"]),
                 "title": record.get("title", ""),
-                "genres": record.get("genres"),
+                "original_title": record.get("original_title", ""),
+                "genres": record.get("genres", ""),
+                "keywords": record.get("keywords", ""),
+                "director": record.get("director", ""),
+                "cast": record.get("cast", ""),
+
                 "popularity": float(record.get("popularity", 0.0) or 0.0),
                 "vote_average": float(record.get("vote_average", 0.0) or 0.0),
                 "vote_count": int(record.get("vote_count", 0) or 0),
+                "runtime": int(record.get("runtime", 0) or 0),
+                "original_language": record.get("original_language", ""),
             }
 
             release_year = record.get("release_year")

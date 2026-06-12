@@ -105,11 +105,20 @@ class MovieVectorStore:
                 {
                     "id": movie_id,
                     "title": metadata.get("title"),
+                    "original_title": metadata.get("original_title"),
                     "release_year": metadata.get("release_year"),
+
                     "genres": metadata.get("genres"),
+                    "keywords": metadata.get("keywords"),
+                    "director": metadata.get("director"),
+                    "cast": metadata.get("cast"),
+
                     "popularity": metadata.get("popularity", 0.0),
                     "vote_average": metadata.get("vote_average", 0.0),
                     "vote_count": metadata.get("vote_count", 0),
+                    "runtime": metadata.get("runtime", 0),
+                    "original_language": metadata.get("original_language", ""),
+
                     "distance": distance,
                     "document": document,
                 }

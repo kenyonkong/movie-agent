@@ -98,9 +98,9 @@ class RecommenderService:
             else raw_candidates
         )
 
-        print("=== Before rerank ===")
-        for c in candidates_for_reranking[:20]:
-            print(c["title"], c["genres"], c["distance"])
+        # print("=== Before rerank ===")
+        # for c in candidates_for_reranking[:20]:
+        #     print(c["title"], c["genres"], c["distance"])
 
 
         reranked_results = self.reranker.rerank(
@@ -109,16 +109,16 @@ class RecommenderService:
             top_k=top_k,
         )
 
-        print("=== After score sort ===")
-        for c in reranked_results[:20]:
-            print(
-                c["title"],
-                c["genres"],
-                c["semantic_score"],
-                c["preference_score"],
-                c["novelty_score"],
-                c["base_score"],
-        )
+        # print("=== After score sort ===")
+        # for c in reranked_results[:20]:
+        #     print(
+        #         c["title"],
+        #         c["genres"],
+        #         c["semantic_score"],
+        #         c["preference_score"],
+        #         c["novelty_score"],
+        #         c["base_score"],
+        # )
 
         # Add document_preview before passing to explanation service.
         for result in reranked_results:

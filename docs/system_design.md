@@ -32,6 +32,25 @@ SQLite Preference Memory
 
 ## Main Components
 
+## Dataset Upgrade
+
+The recommendation system depends heavily on retrieval quality. If the dataset is small or metadata is weak, LLM intent parsing and agentic orchestration cannot fully compensate.
+
+Day 13 upgrades the dataset from the original MVP-scale movie dataset to a larger TMDB-based dataset.
+
+The new ingestion pipeline:
+
+1. Downloads TMDB movie ID exports.
+2. Filters candidate IDs by adult/video flags and popularity.
+3. Fetches movie details through the TMDB API.
+4. Appends credits and keywords.
+5. Filters invalid or low-quality records.
+6. Deduplicates movies.
+7. Builds richer embedding documents.
+8. Rebuilds the Chroma vector store.
+
+This keeps the MovieAgent grounded in a stronger retrieval layer.
+
 ### 1. Data Processing Pipeline
 
 Raw TMDB movie data is cleaned and transformed into structured movie records.
@@ -205,3 +224,4 @@ final_score =
 ```
 
 This will turn the current semantic search system into a personalized recommendation system.
+
