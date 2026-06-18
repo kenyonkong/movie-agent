@@ -46,16 +46,31 @@ def recommend_movies(
 
 @router.get("/debug")
 def recommend_debug() -> dict:
-    """
-    Debug endpoint to check if the recommender service is working without needing a full request body.
-    """
     return {
         "vector_store_count": recommender.vector_store.count(),
-        "message": "Recommendation service is ready.",
-        "reranked": "enabled",
-        "watched_filtering": "configurable",
-        "explanation_provider": recommender.explanation_service.provider,
-        "explanation_model": recommender.explanation_service.model,
-        "intent_provider": recommender.intent_parser.provider,
-        "intent_model": recommender.intent_parser.model,
+        "embedding_provider": (
+            recommender.vector_store
+            .embedding_service
+            .provider
+        ),
+        "embedding_model": (
+            recommender.vector_store
+            .embedding_service
+            .model_name
+        ),
+        "embedding_dimensions": (
+            recommender.vector_store
+            .embedding_service
+            .actual_dimension
+        ),
+        "chroma_collection": (
+            recommender.vector_store.collection_name
+        ),
+        "intent_parser_provider": (
+            recommender.intent_parser.provider
+        ),
+        "explanation_provider": (
+            recommender.explanation_service.provider
+        ),
+        "reranking": "enabled",
     }

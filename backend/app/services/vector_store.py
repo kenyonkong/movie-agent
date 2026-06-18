@@ -1,129 +1,211 @@
 from typing import Any
 
 import chromadb
-from chromadb.api.models.Collection import Collection
 
 from app.core.config import settings
-from app.services.embedding_service import get_embedding_service
+from app.services.embedding_service import EmbeddingService
 
 class MovieVectorStore:
     """
-    Wrapper around Chroma for movie document vector search.
+    Chroma wrapper for movie retrieval.
 
-    This class hides Chroma-specific details from the rest of the app.
+    Every embedding configuration uses a separate collection.
     """
 
-    def __init__(self) -> None:
-        settings.chroma_db_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(
+        self, 
+        embedding_service: EmbeddingService | None = None, 
+        collection_name: str | None = None,
+        reset: bool = False,
+    ) -> None:
+        self.embedding_service = embedding_service or EmbeddingService()
+        self.collection_name = collection_name or self.embedding_service.collection_name()
 
         self.client = chromadb.PersistentClient(
             path=str(settings.chroma_db_dir)
-        ) # Use PersistentClient to store data on disk
-
-        self.collection: Collection = self.client.get_or_create_collection(
-            name=settings.chroma_collection_name,
-            metadata={"description": "Movie document embeddings"},
         )
 
-        self.embedding_service = get_embedding_service()
-    
-    
-    def count(self) -> int:
-        """
-        Return the number of documents in the collection.
-        """
-        return self.collection.count()
-    
-
-    def reset_collection(self) -> None:
-        """
-        Delete and recreate the Chroma collection.
-
-        Useful when we change the embedding model or document format.
-        """
-        try:
-            self.client.delete_collection(name=settings.chroma_collection_name)
-        except Exception:
-            pass # Ignore errors if collection doesn't exist
+        if reset:
+            self.delete_collection_if_exists()
 
         self.collection = self.client.get_or_create_collection(
-            name=settings.chroma_collection_name,
-            metadata={"description": "Movie document embeddings"},
+            name=self.collection_name,  
+            metadata={
+                "provider": self.embedding_service.provider, 
+                "model": self.embedding_service.model_name,
+                "dimensions": (
+                    self.embedding_service.dimensions
+                    if self.embedding_service.dimensions is not None
+                    else "default"
+                ), 
+                "description": (
+                    "Movie documents with rich structured metadata"
+                ),
+            }, 
+            configuration={
+                "hnsw": {
+                    "space": "cosine" # Hierarchical Navigable Small World
+                }
+            },
         )
 
     
-    def add_movies(self, ids: list[str], documents: list[str], metadatas: list[dict[str, Any]], embeddings: list[list[float]]) -> None:
-        """
-        Add a batch of movie documents to the collection with pre-computed embeddings.
+    def delete_collection_if_exists(self) -> None:
+        try:
+            self.client.delete_collection(
+                name=self.collection_name
+            )
+            print(
+                f"Deleted existing collection: "
+                f"{self.collection_name}"
+            )
+        except Exception:
+            # Collection probably did not exist.
+            pass
 
-        Args:
-            ids: List of unique IDs for each document (e.g. movie IDs)
-            documents: List of text content for each document (e.g. movie plot summaries)
-            metadatas: List of metadata dicts for each document (e.g. {"title": "Inception", "year": 2010})
-            embeddings: List of embedding vectors for each document
-        """
-        
-        if not ids:
+
+    def count(self) -> int:
+        return self.collection.count()
+
+
+    def upsert_records(
+        self,  
+        records: list[dict[str, Any]],
+    ) -> None:
+        if not records:
             return
+        
+        documents = [
+            str(record.get("document") or "") for record in records
+        ]
 
-        self.collection.add(
+        embeddings = self.embedding_service.embed_texts(documents)
+
+        ids = [
+            str(record["movie_id"]) for record in records
+        ]
+
+        metadatas = [
+            self._build_metadata(record) for record in records
+        ]
+
+        self.collection.upsert(
             ids=ids,
             documents=documents,
+            embeddings=embeddings,
             metadatas=metadatas,
-            embeddings=embeddings, 
         )
-    
 
-    def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
-        """
-        Search for movies semantically similar to a natural-language query.
 
-        Args:
-            query: The search query (e.g. "A mind-bending thriller about dreams within dreams")
-            top_k: The number of top results to return
-
-        Returns:
-            A list of matching documents with their metadata and similarity scores.
-        """
+    def search(
+        self,
+        query: str,
+        top_k: int = 5
+    ) -> list[dict[str, Any]]:
+        if self.count() == 0:
+            return []
+        
         query_embedding = self.embedding_service.embed_query(query)
 
-        results = self.collection.query(
+        result = self.collection.query(
             query_embeddings=[query_embedding],
-            n_results=top_k,
-            include=["metadatas", "documents", "distances"],
+            n_results=min(top_k, self.count()),
+            include=[
+                "documents", 
+                "metadatas", 
+                "distances",
+            ],
         )
+
+        ids = result.get("ids", [[]])[0]
+        documents = result.get("documents", [[]])[0]
+        metadatas = result.get("metadatas", [[]])[0]
+        distances = result.get("distances", [[]])[0]
 
         formatted_results: list[dict[str, Any]] = []
 
-        ids = results.get("ids", [[]])[0]
-        documents = results.get("documents", [[]])[0]
-        metadatas = results.get("metadatas", [[]])[0]
-        distances = results.get("distances", [[]])[0]
-
         for movie_id, document, metadata, distance in zip(ids, documents, metadatas, distances):
-            formatted_results.append(
-                {
-                    "id": movie_id,
-                    "title": metadata.get("title"),
-                    "original_title": metadata.get("original_title"),
-                    "release_year": metadata.get("release_year"),
-
-                    "genres": metadata.get("genres"),
-                    "keywords": metadata.get("keywords"),
-                    "director": metadata.get("director"),
-                    "cast": metadata.get("cast"),
-
-                    "popularity": metadata.get("popularity", 0.0),
-                    "vote_average": metadata.get("vote_average", 0.0),
-                    "vote_count": metadata.get("vote_count", 0),
+            metadata = metadata or {}
+            formatted_results.append({
+                "id": str(
+                        metadata.get("movie_id", movie_id)
+                    ),
+                    "title": metadata.get("title", ""),
+                    "original_title": metadata.get(
+                        "original_title",
+                        "",
+                    ),
+                    "release_year": metadata.get(
+                        "release_year",
+                        -1,
+                    ),
+                    "genres": metadata.get("genres", ""),
+                    "keywords": metadata.get("keywords", ""),
+                    "director": metadata.get("director", ""),
+                    "cast": metadata.get("cast", ""),
                     "runtime": metadata.get("runtime", 0),
-                    "original_language": metadata.get("original_language", ""),
-
-                    "distance": distance,
-                    "document": document,
-                }
-            )
+                    "original_language": metadata.get(
+                        "original_language",
+                        "",
+                    ),
+                    "popularity": metadata.get(
+                        "popularity",
+                        0.0,
+                    ),
+                    "vote_average": metadata.get(
+                        "vote_average",
+                        0.0,
+                    ),
+                    "vote_count": metadata.get(
+                        "vote_count",
+                        0,
+                    ),
+                    "distance": float(distance),
+                    "document": document or "",
+            })
 
         return formatted_results
+    
+    
+    def _build_metadata(
+        self,
+        record: dict[str, Any],
+    ) -> dict[str, str | int | float | bool]:
+        """
+        Structured metadata is intentionally duplicated from the
+        embedding document.
 
+        document:
+            semantic retrieval
 
+        metadata:
+            exact filters, reranking, display, evaluation,
+            and future MovieAgent tools
+        """
+        return {
+            "movie_id": int(record["movie_id"]),
+            "title": str(record.get("title") or ""),
+            "original_title": str(
+                record.get("original_title") or ""
+            ),
+            "release_year": int(
+                record.get("release_year") or -1
+            ),
+            "genres": str(record.get("genres") or ""),
+            "keywords": str(record.get("keywords") or ""),
+            "director": str(record.get("director") or ""),
+            "cast": str(record.get("cast") or ""),
+            "runtime": int(record.get("runtime") or 0),
+            "original_language": str(
+                record.get("original_language") or ""
+            ),
+            "popularity": float(
+                record.get("popularity") or 0.0
+            ),
+            "vote_average": float(
+                record.get("vote_average") or 0.0
+            ),
+            "vote_count": int(
+                record.get("vote_count") or 0
+            ),
+        }

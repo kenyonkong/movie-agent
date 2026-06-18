@@ -1,110 +1,204 @@
+import argparse
 import json
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm
 
 from app.core.config import settings
-from app.services.embedding_service import batch_items, get_embedding_service
+from app.services.embedding_service import EmbeddingService
 from app.services.vector_store import MovieVectorStore
 
-def load_movie_documents(path: Path) -> list[dict[str, Any]]:
-    """
-    Load movie documents from a JSONL file.
+MANIFEST_DIR = settings.backend_dir / "eval" / "embedding_indexes"
 
-    Each line in the file should be a JSON object with at least "id" and "text" fields.
-    """
+def load_records(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
-        raise FileNotFoundError(f"Movie documents file not found at {path}")
+        raise FileNotFoundError(
+            f"Movie document file does not exist: {path}"
+        )
     
     records: list[dict[str, Any]] = []
 
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
+    with path.open("r", encoding="utf-8") as file:
+        for line_number, line in enumerate(file, start=1):
             line = line.strip()
 
             if not line:
                 continue
 
-            records.append(json.loads(line))
+            record = json.loads(line)
+
+            if not record.get("movie_id"):
+                raise ValueError(
+                    f"Missing movie_id on line {line_number}"
+                )
+
+            if not record.get("document"):
+                raise ValueError(
+                    f"Missing document on line {line_number}"
+                )
+
+            records.append(record)
 
     return records
 
 
-def build_vector_database(reset: bool = True) -> None:
-    """
-    Build the Chroma vector database from movie documents.
-    """
-    print("Loading movie documents...")
-    records = load_movie_documents(settings.movie_documents_path)
+def save_manifest(
+    service: EmbeddingService,
+    store: MovieVectorStore, 
+    record_count: int, 
+    elapsed_seconds: float,
+) -> Path:
+    MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"Loaded {len(records)} movie documents")
+    manifest = {
+        "built_at": datetime.now(
+            timezone.utc
+        ).isoformat(),
+        "provider": service.provider,
+        "model": service.model_name,
+        "requested_dimensions": service.dimensions,
+        "actual_dimensions": service.actual_dimension,
+        "collection_name": store.collection_name,
+        "record_count": record_count,
+        "collection_count": store.count(),
+        "build_seconds": round(elapsed_seconds, 2),
+        "openai_input_tokens": service.total_input_tokens,
+        "dataset_path": str(
+            settings.movie_documents_path
+        ),
+    }
 
-    embedding_service = get_embedding_service()
-    vector_store = MovieVectorStore()
+    output_path = (
+        MANIFEST_DIR
+        / f"{store.collection_name}.json"
+    )
 
-    if reset:
-        print("Resetting Chroma collection...")
-        vector_store.reset_collection()
 
-    batch_size = settings.embedding_batch_size
+    output_path.write_text(
+        json.dumps(
+            manifest,
+            indent=2,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
 
-    print(f"Embedding Provider: {settings.embedding_provider}")
-    print(f"Embedding batch size: {batch_size}")
-    print("Processing and adding documents to vector store...")
+    return output_path
 
-    documents = [record["document"] for record in records]
 
-    for batch_start in tqdm(range(0, len(records), batch_size), desc="Embedding and storing movies"):
-        batch_records = records[batch_start:batch_start + batch_size]
-        batch_documents = documents[batch_start:batch_start + batch_size]
-
-        embeddings = embedding_service.embed_texts(batch_documents)
-
-        ids = [str(record["movie_id"]) for record in batch_records]
-
-        metadatas = []
-        for record in batch_records:
-            metadata = {
-                "movie_id": int(record["movie_id"]),
-                "title": record.get("title", ""),
-                "original_title": record.get("original_title", ""),
-                "genres": record.get("genres", ""),
-                "keywords": record.get("keywords", ""),
-                "director": record.get("director", ""),
-                "cast": record.get("cast", ""),
-
-                "popularity": float(record.get("popularity", 0.0) or 0.0),
-                "vote_average": float(record.get("vote_average", 0.0) or 0.0),
-                "vote_count": int(record.get("vote_count", 0) or 0),
-                "runtime": int(record.get("runtime", 0) or 0),
-                "original_language": record.get("original_language", ""),
-            }
-
-            release_year = record.get("release_year")
-            if release_year is not None:
-                metadata["release_year"] = int(release_year)
-            else:
-                metadata["release_year"] = -1
-            
-            metadatas.append(metadata)
-        
-        vector_store.add_movies(
-            ids=ids,
-            documents=batch_documents,
-            metadatas=metadatas,
-            embeddings=embeddings,
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Build one Chroma movie index for a specific "
+            "embedding provider/model."
         )
+    )
+
+    parser.add_argument(
+        "--provider",
+        choices=["local", "openai"],
+        default=None,
+    )
+
+    parser.add_argument(
+        "--model",
+        default=None,
+    )
     
-    print("\nVector database build complete.")
-    print(f"Chroma path: {settings.chroma_db_dir}")
-    print(f"Collection name: {settings.chroma_collection_name}")
-    print(f"Total stored movies: {vector_store.count()}")
+    parser.add_argument(
+        "--dimensions",
+        type=int,
+        default=None,
+    )
+
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+    )
+
+    parser.add_argument(
+        "--reset", 
+        action="store_true",
+        help="Delete only this model's collection before rebuilding.",
+    )
+
+    return parser.parse_args()
 
 
-def main() -> None:
-    build_vector_database(reset=True)
+def main():
+    args = parse_args()
+
+    service = EmbeddingService(
+        provider=args.provider,
+        model_name=args.model,
+        dimensions=args.dimensions,
+    )
+
+    if args.batch_size is not None:
+        service.batch_size = args.batch_size
+    
+    store = MovieVectorStore(
+        embedding_service=service, 
+        reset=args.reset, 
+    )
+
+    records = load_records(settings.movie_documents_path)
+
+    print("\n========== EMBEDDING BUILD ==========")
+    print(f"Provider: {service.provider}")
+    print(f"Model: {service.model_name}")
+    print(f"Dimensions requested: {service.dimensions}")
+    print(f"Collection: {store.collection_name}")
+    print(f"Records: {len(records):,}")
+    print(f"Batch size: {service.batch_size}")
+
+    if service.local_model is not None:
+        print(
+            "Local max sequence length: "
+            f"{service.local_model.max_seq_length}"
+        )
+
+    start_time = time.perf_counter()
+
+    for start in tqdm(
+        range(0, len(records), service.batch_size),
+        desc=f"Building {store.collection_name}",
+    ):
+        batch = records[start:start + service.batch_size]
+        store.upsert_records(batch)
+    
+    elapsed_seconds = time.perf_counter() - start_time
+
+    manifest_path = save_manifest(
+        service=service,
+        store=store,
+        record_count=len(records),
+        elapsed_seconds=elapsed_seconds,
+    )   
+    
+    print("\n========== BUILD COMPLETE ==========")
+    print(f"Collection count: {store.count():,}")
+    print(
+        f"Actual vector dimensions: "
+        f"{service.actual_dimension}"
+    )
+    print(
+        f"Elapsed: {elapsed_seconds:.2f} seconds"
+    )
+
+    if service.provider == "openai":
+        print(
+            "OpenAI input tokens reported: "
+            f"{service.total_input_tokens:,}"
+        )
+
+    print(f"Manifest: {manifest_path}")
 
 
 if __name__ == "__main__":
     main()
+    

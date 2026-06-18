@@ -1,0 +1,401 @@
+[
+  {
+    "label": "local_minilm",
+    "provider": "local",
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "dimensions": 384,
+    "collection_name": "movie-docs-local-sentence-transformers-all-minilm-l6-v2",
+    "collection_count": 19985,
+    "top_k": 10,
+    "query_count": 8,
+    "hit_rate_at_k": 0.625,
+    "mean_recall_at_k": 0.3521,
+    "mean_reciprocal_rank": 0.1293,
+    "median_query_latency_ms": 10.71,
+    "queries": [
+      {
+        "query_id": "nolan_dream_time",
+        "query": "a cerebral Christopher Nolan movie involving dreams, memory, or time",
+        "hit_at_k": 1,
+        "recall_at_k": 0.4,
+        "reciprocal_rank": 0.5,
+        "median_latency_ms": 14.4,
+        "matching_titles": [
+          "Inception",
+          "Memento"
+        ],
+        "retrieved_titles": [
+          "Dream Scenario",
+          "Inception",
+          "Have Dreams, Will Travel",
+          "Brainstorm",
+          "Waking Life",
+          "Memento",
+          "Remember",
+          "Dreamscape",
+          "Before I Go to Sleep",
+          "Lucid Dream"
+        ]
+      },
+      {
+        "query_id": "dicaprio_psychological_thriller",
+        "query": "a tense Leonardo DiCaprio psychological thriller about paranoia and uncertain reality",
+        "hit_at_k": 1,
+        "recall_at_k": 0.5,
+        "reciprocal_rank": 0.1429,
+        "median_latency_ms": 11.68,
+        "matching_titles": [
+          "Inception"
+        ],
+        "retrieved_titles": [
+          "Paranoia",
+          "Regression",
+          "A Scanner Darkly",
+          "The Da Vinci Code",
+          "Images",
+          "Conspiracy Theory",
+          "Inception",
+          "Angels & Demons",
+          "Predestination",
+          "The Conversation"
+        ]
+      },
+      {
+        "query_id": "quiet_emotional_scifi",
+        "query": "quiet emotional science fiction about memory, identity, loneliness, and human connection",
+        "hit_at_k": 1,
+        "recall_at_k": 0.25,
+        "reciprocal_rank": 0.1,
+        "median_latency_ms": 10.57,
+        "matching_titles": [
+          "Eternal Sunshine of the Spotless Mind"
+        ],
+        "retrieved_titles": [
+          "The Giver",
+          "In Your Eyes",
+          "I Think We're Alone Now",
+          "The History of Love",
+          "2046",
+          "Night Train to Lisbon",
+          "I Belonged to You",
+          "The Forgotten",
+          "Warning",
+          "Eternal Sunshine of the Spotless Mind"
+        ]
+      },
+      {
+        "query_id": "animated_grief_ancestors",
+        "query": "a warm animated family movie about grief, memory, music, and honoring ancestors",
+        "hit_at_k": 0,
+        "recall_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "median_latency_ms": 10.31,
+        "matching_titles": [],
+        "retrieved_titles": [
+          "The Addams Family",
+          "The Ancestral",
+          "The Ballad of Narayama",
+          "Death at a Funeral",
+          "Humane",
+          "A Madea Family Funeral",
+          "Still Walking",
+          "Orphans",
+          "Addams Family Reunion",
+          "The Celebration"
+        ]
+      },
+      {
+        "query_id": "stylish_whodunit",
+        "query": "a stylish modern murder mystery with an ensemble cast, family conflict, and dark comedy",
+        "hit_at_k": 0,
+        "recall_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "median_latency_ms": 10.31,
+        "matching_titles": [],
+        "retrieved_titles": [
+          "Murder Mystery",
+          "Adulthood",
+          "The Thursday Murder Club",
+          "A Shot in the Dark",
+          "Dark Places",
+          "Murder Mystery 2",
+          "November Criminals",
+          "Violent Ends",
+          "Agatha and the Midnight Murders",
+          "Framed for Murder: A Fixer Upper Mystery"
+        ]
+      },
+      {
+        "query_id": "artificial_intelligence_isolation",
+        "query": "an intimate science fiction movie about artificial intelligence, isolation, and emotional attachment",
+        "hit_at_k": 1,
+        "recall_at_k": 0.6667,
+        "reciprocal_rank": 0.1667,
+        "median_latency_ms": 10.3,
+        "matching_titles": [
+          "Her",
+          "Ex Machina"
+        ],
+        "retrieved_titles": [
+          "Wifelike",
+          "AI Love You",
+          "Companion",
+          "I'm Your Man",
+          "Atlas",
+          "Her",
+          "Ex Machina",
+          "Moon",
+          "Zone 414",
+          "A.I. Artificial Intelligence"
+        ]
+      },
+      {
+        "query_id": "antiwar_survival",
+        "query": "an intense anti-war movie focused on fear and survival rather than heroic glory",
+        "hit_at_k": 0,
+        "recall_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "median_latency_ms": 10.93,
+        "matching_titles": [],
+        "retrieved_titles": [
+          "Paths of Glory",
+          "Before Dawn",
+          "Savior",
+          "Red Dawn",
+          "Overlord",
+          "Allied",
+          "Crossfire",
+          "Nazi Supersoldier",
+          "Apocalypse Now",
+          "Beast of War"
+        ]
+      },
+      {
+        "query_id": "romantic_memory_loss",
+        "query": "a melancholic romance involving erased memories and the pain of losing a relationship",
+        "hit_at_k": 1,
+        "recall_at_k": 1.0,
+        "reciprocal_rank": 0.125,
+        "median_latency_ms": 10.85,
+        "matching_titles": [
+          "Eternal Sunshine of the Spotless Mind"
+        ],
+        "retrieved_titles": [
+          "Love Reset",
+          "Forgotten Love",
+          "A Moment to Remember",
+          "Flipped",
+          "The Greatest Hits",
+          "Romance",
+          "The History of Love",
+          "Eternal Sunshine of the Spotless Mind",
+          "Even If This Love Disappears Tonight",
+          "The Forgotten"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "openai_3_small",
+    "provider": "openai",
+    "model": "text-embedding-3-small",
+    "dimensions": 1536,
+    "collection_name": "movie-docs-openai-text-embedding-3-small-ddefault",
+    "collection_count": 19985,
+    "top_k": 10,
+    "query_count": 8,
+    "hit_rate_at_k": 0.875,
+    "mean_recall_at_k": 0.6521,
+    "mean_reciprocal_rank": 0.5055,
+    "median_query_latency_ms": 218.04,
+    "queries": [
+      {
+        "query_id": "nolan_dream_time",
+        "query": "a cerebral Christopher Nolan movie involving dreams, memory, or time",
+        "hit_at_k": 1,
+        "recall_at_k": 0.8,
+        "reciprocal_rank": 1.0,
+        "median_latency_ms": 357.49,
+        "matching_titles": [
+          "Inception",
+          "Tenet",
+          "Memento",
+          "Interstellar"
+        ],
+        "retrieved_titles": [
+          "Inception",
+          "Tenet",
+          "Memento",
+          "Brainstorm",
+          "Insomnia",
+          "Interstellar",
+          "In Dreams",
+          "Dunkirk",
+          "Memory",
+          "Dream Scenario"
+        ]
+      },
+      {
+        "query_id": "dicaprio_psychological_thriller",
+        "query": "a tense Leonardo DiCaprio psychological thriller about paranoia and uncertain reality",
+        "hit_at_k": 1,
+        "recall_at_k": 1.0,
+        "reciprocal_rank": 1.0,
+        "median_latency_ms": 402.39,
+        "matching_titles": [
+          "Shutter Island",
+          "Inception"
+        ],
+        "retrieved_titles": [
+          "Shutter Island",
+          "Inception",
+          "Paranoia",
+          "One Battle After Another",
+          "Pi",
+          "Red Lights",
+          "Body of Lies",
+          "Memento",
+          "Trance",
+          "Disturbia"
+        ]
+      },
+      {
+        "query_id": "quiet_emotional_scifi",
+        "query": "quiet emotional science fiction about memory, identity, loneliness, and human connection",
+        "hit_at_k": 1,
+        "recall_at_k": 0.25,
+        "reciprocal_rank": 0.1111,
+        "median_latency_ms": 172.71,
+        "matching_titles": [
+          "Her"
+        ],
+        "retrieved_titles": [
+          "Rememory",
+          "Memory",
+          "In Your Eyes",
+          "Reminiscence",
+          "Memoria",
+          "Little Fish",
+          "I Think We're Alone Now",
+          "Wifelike",
+          "Her",
+          "Unforgettable"
+        ]
+      },
+      {
+        "query_id": "animated_grief_ancestors",
+        "query": "a warm animated family movie about grief, memory, music, and honoring ancestors",
+        "hit_at_k": 1,
+        "recall_at_k": 1.0,
+        "reciprocal_rank": 1.0,
+        "median_latency_ms": 186.1,
+        "matching_titles": [
+          "Coco"
+        ],
+        "retrieved_titles": [
+          "Coco",
+          "Still Walking",
+          "Minari",
+          "Memoir of a Snail",
+          "Song of the Sea",
+          "Riverdance: The Animated Adventure",
+          "The Snow Sister",
+          "Wolf Children",
+          "Encanto",
+          "Mavka: The Forest Song"
+        ]
+      },
+      {
+        "query_id": "stylish_whodunit",
+        "query": "a stylish modern murder mystery with an ensemble cast, family conflict, and dark comedy",
+        "hit_at_k": 1,
+        "recall_at_k": 0.5,
+        "reciprocal_rank": 0.1,
+        "median_latency_ms": 217.54,
+        "matching_titles": [
+          "Glass Onion: A Knives Out Mystery"
+        ],
+        "retrieved_titles": [
+          "Murder Mystery",
+          "Murder Mystery 2",
+          "A Kind of Murder",
+          "Invitation to a Murder",
+          "Murder in the Building",
+          "Murder by Death",
+          "Wake Up Dead Man: A Knives Out Mystery",
+          "Manhattan Murder Mystery",
+          "Adulthood",
+          "Glass Onion: A Knives Out Mystery"
+        ]
+      },
+      {
+        "query_id": "artificial_intelligence_isolation",
+        "query": "an intimate science fiction movie about artificial intelligence, isolation, and emotional attachment",
+        "hit_at_k": 1,
+        "recall_at_k": 0.6667,
+        "reciprocal_rank": 0.3333,
+        "median_latency_ms": 220.62,
+        "matching_titles": [
+          "Ex Machina",
+          "Her"
+        ],
+        "retrieved_titles": [
+          "A.I. Artificial Intelligence",
+          "A.I. Rising",
+          "Ex Machina",
+          "Wifelike",
+          "Her",
+          "Subservience",
+          "I'm Your Man",
+          "Afraid",
+          "The Artifice Girl",
+          "AI Love You"
+        ]
+      },
+      {
+        "query_id": "antiwar_survival",
+        "query": "an intense anti-war movie focused on fear and survival rather than heroic glory",
+        "hit_at_k": 0,
+        "recall_at_k": 0.0,
+        "reciprocal_rank": 0.0,
+        "median_latency_ms": 183.22,
+        "matching_titles": [],
+        "retrieved_titles": [
+          "Home of the Brave",
+          "Lone Survivor",
+          "War Machine",
+          "Rescue Dawn",
+          "Fear the Night",
+          "Jarhead",
+          "The Thin Red Line",
+          "Apocalypse Now",
+          "Red Dawn",
+          "Fearless"
+        ]
+      },
+      {
+        "query_id": "romantic_memory_loss",
+        "query": "a melancholic romance involving erased memories and the pain of losing a relationship",
+        "hit_at_k": 1,
+        "recall_at_k": 1.0,
+        "reciprocal_rank": 0.5,
+        "median_latency_ms": 218.54,
+        "matching_titles": [
+          "Eternal Sunshine of the Spotless Mind"
+        ],
+        "retrieved_titles": [
+          "Even If This Love Disappears Tonight",
+          "Eternal Sunshine of the Spotless Mind",
+          "We Couldn't Become Adults",
+          "Love Reset",
+          "Even If This Love Disappears from the World Tonight",
+          "Three Goodbyes",
+          "Forgotten Love",
+          "Nostalgia",
+          "Crying Out Love in the Center of the World",
+          "Memories of Matsuko"
+        ]
+      }
+    ]
+  }
+]

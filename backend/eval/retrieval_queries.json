@@ -1,0 +1,71 @@
+[
+  {
+    "id": "nolan_dream_time",
+    "query": "a cerebral Christopher Nolan movie involving dreams, memory, or time",
+    "relevant_titles": [
+      "Inception",
+      "Memento",
+      "Interstellar",
+      "Tenet",
+      "The Prestige"
+    ]
+  },
+  {
+    "id": "dicaprio_psychological_thriller",
+    "query": "a tense Leonardo DiCaprio psychological thriller about paranoia and uncertain reality",
+    "relevant_titles": [
+      "Shutter Island",
+      "Inception"
+    ]
+  },
+  {
+    "id": "quiet_emotional_scifi",
+    "query": "quiet emotional science fiction about memory, identity, loneliness, and human connection",
+    "relevant_titles": [
+      "Her",
+      "After Yang",
+      "Arrival",
+      "Eternal Sunshine of the Spotless Mind"
+    ]
+  },
+  {
+    "id": "animated_grief_ancestors",
+    "query": "a warm animated family movie about grief, memory, music, and honoring ancestors",
+    "relevant_titles": [
+      "Coco"
+    ]
+  },
+  {
+    "id": "stylish_whodunit",
+    "query": "a stylish modern murder mystery with an ensemble cast, family conflict, and dark comedy",
+    "relevant_titles": [
+      "Knives Out",
+      "Glass Onion: A Knives Out Mystery"
+    ]
+  },
+  {
+    "id": "artificial_intelligence_isolation",
+    "query": "an intimate science fiction movie about artificial intelligence, isolation, and emotional attachment",
+    "relevant_titles": [
+      "Her",
+      "Ex Machina",
+      "After Yang"
+    ]
+  },
+  {
+    "id": "antiwar_survival",
+    "query": "an intense anti-war movie focused on fear and survival rather than heroic glory",
+    "relevant_titles": [
+      "All Quiet on the Western Front",
+      "Come and See",
+      "1917"
+    ]
+  },
+  {
+    "id": "romantic_memory_loss",
+    "query": "a melancholic romance involving erased memories and the pain of losing a relationship",
+    "relevant_titles": [
+      "Eternal Sunshine of the Spotless Mind"
+    ]
+  }
+]

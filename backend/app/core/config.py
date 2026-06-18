@@ -7,21 +7,41 @@ from pydantic import BaseModel
 load_dotenv() # Load environment variables from .env file
 
 
+def optional_int_from_env(name: str) -> int | None:
+    value = os.getenv(name)
+
+    if value is None or not value.strip():
+        return None
+
+    return int(value)
+
 class Settings(BaseModel):
     app_name: str = os.getenv("APP_NAME", "Movie Agent API")
     app_version: str = "0.1.0"
     environment: str = "development"
+    
+    # OpenAI API key
+    openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
+
+    # ---------------------------------------------------------
+    # Embeddings
+    # ---------------------------------------------------------
 
     # Embedding provider can be "local" or "openai"
     embedding_provider: str = os.getenv("EMBEDDING_PROVIDER", "local")
+    # Local embedding settings
+    local_embedding_model: str = os.getenv("LOCAL_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
+    # OpenAI Embedding model
+    openai_embedding_model: str = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
+    openai_embedding_dimensions: int | None = optional_int_from_env("OPENAI_EMBEDDING_DIMENSIONS")
+    embedding_batch_size: int = int(os.getenv("EMBEDDING_BATCH_SIZE", 64))
+    
+    # ---------------------------------------------------------
+    # Explanation
+    # ---------------------------------------------------------
     # Explanation provider can be "template" or "openai"
     explanation_provider: str = os.getenv("EXPLANATION_PROVIDER", "template")
-
-    # OpenAI settings
-    openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
-    openai_embedding_model: str = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
-    
     openai_explanation_model: str = os.getenv(
         "OPENAI_EXPLANATION_MODEL", 
         "gpt-5.4-mini"
@@ -40,8 +60,6 @@ class Settings(BaseModel):
     intent_parser_provider: str = os.getenv("INTENT_PARSER_PROVIDER", "template")
     openai_intent_model: str = os.getenv("OPENAI_INTENT_MODEL", "gpt-5.4-mini")
 
-    # Local embedding settings
-    local_embedding_model : str = os.getenv("LOCAL_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
     # Data paths
     backend_dir: Path = Path(__file__).resolve().parents[2]
@@ -51,7 +69,11 @@ class Settings(BaseModel):
 
     # Chroma vector DB path
     chroma_db_dir: Path = backend_dir / "chroma_db"
-    chroma_collection_name: str = os.getenv("CHROMA_COLLECTION_NAME", "movie_documents")
+    chroma_collection_prefix: str = os.getenv(
+        "CHROMA_COLLECTION_PREFIX",
+        "movie-docs",
+    )
+    chroma_collection_name: str | None = os.getenv("CHROMA_COLLECTION_NAME") or None
 
     # Ingestion settings
     embedding_batch_size: int = int(os.getenv("EMBEDDING_BATCH_SIZE", 32))
@@ -62,5 +84,6 @@ class Settings(BaseModel):
         "DATABASE_URL", 
         f"sqlite:///{sqlite_db_path}"
     )
+
 
 settings = Settings()
