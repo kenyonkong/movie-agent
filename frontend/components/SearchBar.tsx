@@ -4,12 +4,14 @@ type SearchBarProps = {
     includeWatched: boolean;
     useLlmExplanations: boolean;
     useLlmIntent: boolean;
+    includeAgentTrace: boolean;
     isLoading: boolean;
     onQueryChange: (query: string) => void;
     onTopKChange: (topK: number) => void;
     onIncludeWatchedChange: (includeWatched: boolean) => void;
     onUseLlmExplanationsChange: (useLlmExplanations: boolean) => void;
     onUseLlmIntentChange: (useLlmIntent: boolean) => void;
+    onIncludeAgentTraceChange: (includeAgentTrace: boolean) => void;
     onSubmit: () => void;
 };
 
@@ -27,12 +29,14 @@ export function SearchBar({
     includeWatched,
     useLlmExplanations,
     useLlmIntent,
+    includeAgentTrace,
     isLoading,
     onQueryChange,
     onTopKChange,
     onIncludeWatchedChange,
     onUseLlmExplanationsChange,
     onUseLlmIntentChange,
+    onIncludeAgentTraceChange,
     onSubmit,
 }: SearchBarProps) {
     function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -107,6 +111,15 @@ export function SearchBar({
                 className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
               />
               Use LLM explanations
+            </label>
+            <label className="flex items-center gap-3 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={includeAgentTrace}
+                onChange={(event) => onIncludeAgentTraceChange(event.target.checked)}
+                className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
+              />
+              Show agent execution trace
             </label>
           </div>
 

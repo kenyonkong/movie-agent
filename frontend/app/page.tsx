@@ -9,6 +9,7 @@ import type {
   MovieRecommendation,
   UserMoviePreferenceResponse,
   UserMemorySummary,
+  AgentTrace,
  } from "@/types/movie";
 
 const DEMO_USER_ID = "demo_user";
@@ -31,6 +32,9 @@ export default function Home() {
   const [explanationProvider, setExplanationProvider] = useState<string | null>(
     null
   );
+
+  const [includeAgentTrace, setIncludeAgentTrace] = useState(true);
+  const [agentTrace, setAgentTrace] = useState<AgentTrace | null>(null);
 
   const [topK, setTopK] = useState(5);
   const [results, setResults] = useState<MovieRecommendation[]>([]);
@@ -69,6 +73,7 @@ export default function Home() {
         top_k: topK,
         use_llm_explanations: useLlmExplanations,
         use_llm_intent: useLlmIntent,
+        include_agent_trace: includeAgentTrace,
       });
       // setClientLatencyMs(performance.now() - startTime);
 
@@ -80,6 +85,7 @@ export default function Home() {
       setRetrievalQuery(resonse.retrieval_query);
       setParsedIntent(resonse.parsed_intent);
       setExplanationProvider(resonse.explanation_provider);
+      setAgentTrace(resonse.agent_trace);
       setLastQuery(trimmedQuery);
     } catch (err) {
       setResults([]);
@@ -91,6 +97,7 @@ export default function Home() {
       setParsedIntent(null);
       setExplanationProvider(null);
       setLastQuery(null);
+      setAgentTrace(null);
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
     } finally {
       setIsLoading(false);
@@ -210,12 +217,14 @@ export default function Home() {
           includeWatched={includeWatched}
           useLlmExplanations={useLlmExplanations}
           useLlmIntent={useLlmIntent}
+          includeAgentTrace={includeAgentTrace}
           isLoading={isLoading}
           onQueryChange={setQuery}
           onTopKChange={setTopK}
           onIncludeWatchedChange={setIncludeWatched}
           onUseLlmExplanationsChange={setUseLlmExplanations}
           onUseLlmIntentChange={setUseLlmIntent}
+          onIncludeAgentTraceChange={setIncludeAgentTrace}
           onSubmit={handleRecommend}
         />
 
@@ -252,6 +261,7 @@ export default function Home() {
 
         {!isLoading && (
           <RecommendationList
+          agentTrace={agentTrace}
           results={results}
           latencyMs={latencyMs}
           candidateCount={candidateCount}

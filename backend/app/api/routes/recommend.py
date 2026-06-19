@@ -4,11 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.db.schemas import RecommendRequest, RecommendResponse
-from app.services.recommender import RecommenderService
+from app.agents.movie_agent import MovieAgent
 
 router = APIRouter(prefix="/recommend", tags=["recommendation"])
 
-recommender = RecommenderService() # global recommender instance avoids repeated initialization overhead.
+movie_agent = MovieAgent() # global recommender instance avoids repeated initialization overhead.
 
 @router.post("", response_model=RecommendResponse)
 def recommend_movies(
@@ -23,54 +23,71 @@ def recommend_movies(
     - Returns top-k candidates
     - Includes simple non-LLM explanations
     - Optionally uses LLM-generated explanations
+
+    Day 15: Run the controlled MovieAgent recommendation workflow.
     """
     try:
-        return recommender.recommend(
+        return movie_agent.recommend(
             db=db,
-            user_id=request.user_id,
-            query=request.query,
-            top_k=request.top_k,
-            include_watched=request.include_watched,
-            use_llm_explanation=request.use_llm_explanations,
-            use_llm_intent=request.use_llm_intent,
+            request=request,
         )
+
     except RuntimeError as error:
-        raise HTTPException(status_code=500, detail=str(error)) from error
-    
+        raise HTTPException(
+            status_code=500,
+            detail=str(error),
+        ) from error
+
     except Exception as error:
         raise HTTPException(
             status_code=500,
-            detail=f"Unexpected recommendation error: {error}",
+            detail=(
+                "Unexpected MovieAgent error: "
+                f"{error}"
+            ),
         ) from error
     
 
 @router.get("/debug")
 def recommend_debug() -> dict:
+    embedding_service = (
+        movie_agent.vector_store.embedding_service
+    )
+
     return {
-        "vector_store_count": recommender.vector_store.count(),
-        "embedding_provider": (
-            recommender.vector_store
-            .embedding_service
-            .provider
-        ),
-        "embedding_model": (
-            recommender.vector_store
-            .embedding_service
-            .model_name
-        ),
-        "embedding_dimensions": (
-            recommender.vector_store
-            .embedding_service
-            .actual_dimension
-        ),
-        "chroma_collection": (
-            recommender.vector_store.collection_name
-        ),
-        "intent_parser_provider": (
-            recommender.intent_parser.provider
-        ),
-        "explanation_provider": (
-            recommender.explanation_service.provider
-        ),
-        "reranking": "enabled",
+        "agent": {
+            "name": "movie_agent",
+            "version": "day15",
+            "workflow": "deterministic_tool_orchestration",
+        },
+        "vector_store": {
+            "count": movie_agent.vector_store.count(),
+            "collection": (
+                movie_agent.vector_store.collection_name
+            ),
+            "embedding_provider": (
+                embedding_service.provider
+            ),
+            "embedding_model": (
+                embedding_service.model_name
+            ),
+            "embedding_dimensions": (
+                embedding_service.actual_dimension
+            ),
+        },
+        "tools": {
+            "intent_provider": (
+                movie_agent.intent_parser.provider
+            ),
+            "intent_model": (
+                movie_agent.intent_parser.model
+            ),
+            "explanation_provider": (
+                movie_agent.explanation_service.provider
+            ),
+            "explanation_model": (
+                movie_agent.explanation_service.model
+            ),
+            "bounded_llm_reranker": "not_enabled",
+        },
     }

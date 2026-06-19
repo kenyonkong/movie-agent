@@ -1,10 +1,35 @@
 from pydantic import BaseModel, Field
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Any
 
 FeedbackAction = Literal["like", "dislike", "watched", "save"]
 PreferenceValue = Literal["like", "dislike"]
+
+class AgentTraceStep(BaseModel):
+    """
+    One observable step in the MovieAgent workflow.
+
+    The trace should contain operational information, not secrets,
+    full prompts, API keys, or the user's complete stored memory.
+    """
+
+    name: str
+    status: Literal["completed", "skipped", "failed"]
+    duration_ms: float
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentTrace(BaseModel):
+    """
+    Sanitized execution trace returned for debugging and learning.
+    """
+
+    agent_name: str = "movie_agent"
+    agent_version: str = "day15"
+    total_duration_ms: float
+    steps: list[AgentTraceStep] = Field(default_factory=list)
+
 
 class MovieIntent(BaseModel):
     """
@@ -66,6 +91,13 @@ class RecommendRequest(BaseModel):
             "the configured intent parser provider."
         ),
     )
+    include_agent_trace: bool = Field(
+        default=False,
+        description=(
+            "Whether the response should include a sanitized MovieAgent "
+            "execution trace."
+        ),
+    )
 
 
 class MovieRecommendation(BaseModel):
@@ -121,6 +153,7 @@ class RecommendResponse(BaseModel):
 
     results: list[MovieRecommendation]
     latency_ms: float
+    agent_trace: AgentTrace | None = None
 
 
 class FeedbackRequest(BaseModel):

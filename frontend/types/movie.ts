@@ -1,6 +1,20 @@
 export type FeedbackAction = 'like' | 'dislike' | 'watched' | 'save';
 export type PreferenceValue = "like" | "dislike";
+export type AgentTraceStatus = "completed" | "skipped" | "failed";
 
+export type AgentTraceStep = {
+  name: string;
+  status: AgentTraceStatus;
+  duration_ms: number;
+  details: Record<string, unknown>;
+};
+
+export type AgentTrace = {
+  agent_name: string;
+  agent_version: string;
+  total_duration_ms: number;
+  steps: AgentTraceStep[];
+};
 
 export type MovieIntent = {
   raw_query: string;
@@ -56,6 +70,7 @@ export type RecommendRequest = {
     include_watched: boolean;
     use_llm_explanations: boolean;
     use_llm_intent: boolean;
+    include_agent_trace: boolean;
 };
 
 export type RecommendResponse = {
@@ -73,6 +88,7 @@ export type RecommendResponse = {
 
     results: MovieRecommendation[];
     latency_ms: number;
+    agent_trace: AgentTrace | null;
 };
 
 

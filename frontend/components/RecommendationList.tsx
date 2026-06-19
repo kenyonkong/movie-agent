@@ -1,4 +1,11 @@
-import type { MovieIntent, MovieRecommendation, UserMoviePreferenceResponse} from "@/types/movie";
+import type { 
+  MovieIntent, 
+  MovieRecommendation, 
+  UserMoviePreferenceResponse, 
+  AgentTrace,
+} from "@/types/movie";
+
+import { AgentTracePanel } from "./AgentTracePanel";
 import { MovieCard } from "./MovieCard";
 
 type RecommendationListProps = {
@@ -14,6 +21,7 @@ type RecommendationListProps = {
     userId: string;
     query: string | null;
     onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
+    agentTrace: AgentTrace | null;
 };
 
 export function RecommendationList({
@@ -29,6 +37,7 @@ export function RecommendationList({
     retrievalQuery,
     parsedIntent,
     onPreferenceSaved,
+    agentTrace,
 }: RecommendationListProps) {
     if (results.length === 0) {
         return null;
@@ -77,6 +86,10 @@ export function RecommendationList({
         </p>
       )}
       
+      {agentTrace && (
+        <AgentTracePanel trace={agentTrace} />
+      )}
+
       {parsedIntent && (
         <section className="mb-5 rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
           <div className="mb-3">

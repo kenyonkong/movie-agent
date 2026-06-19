@@ -376,3 +376,26 @@ Next steps:
 ## Resume Summary
 
 Built a full-stack AI movie recommendation system using FastAPI, Next.js, Chroma, SQLAlchemy, and dense embeddings. The system processes movie metadata into embedding-ready documents, retrieves movies from natural-language queries, and stores one current user preference state per user/movie pair for future personalized reranking.
+
+
+## MovieAgent Orchestration
+
+The MovieAgent is a controlled workflow orchestrator rather than an
+unrestricted autonomous LLM agent.
+
+Its responsibilities are:
+
+1. Interpret the request through the intent parser.
+2. Load the user's recommendation memory.
+3. Retrieve candidates from the configured vector index.
+4. Apply watched filtering and fallback rules.
+5. Produce a heuristic shortlist.
+6. Optionally pass that shortlist to a bounded LLM reranker.
+7. Generate grounded explanations.
+8. Return a validated response and sanitized trace.
+
+The MovieAgent does not own the implementation details of retrieval,
+memory, ranking, or explanation. Those remain separate injectable tools.
+
+This separation improves testability and allows individual tools to be
+upgraded without rewriting the orchestration layer.
