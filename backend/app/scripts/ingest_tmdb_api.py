@@ -164,17 +164,23 @@ def normalize_movie(movie: dict[str, Any]) -> dict[str, Any]:
         "original_title": clean_text(movie.get("original_title")),
         "release_date": release_date,
         "release_year": release_year,
+
         "genres_clean": ", ".join(genres),
         "overview": overview,
         "tagline": tagline,
         "keywords_clean": ", ".join(keywords),
         "cast_clean": ", ".join(cast),
         "director": director,
+
         "runtime": int(movie.get("runtime") or 0),
         "vote_average": float(movie.get("vote_average") or 0.0),
         "vote_count": int(movie.get("vote_count") or 0),
         "popularity": float(movie.get("popularity") or 0.0),
         "original_language": clean_text(movie.get("original_language")),
+
+        "poster_path": clean_text(movie.get("poster_path")),
+        "backdrop_path": clean_text(movie.get("backdrop_path")),
+
         "status": clean_text(movie.get("status")),
         "homepage": clean_text(movie.get("homepage")),
         "imdb_id": clean_text(movie.get("imdb_id")),
@@ -333,6 +339,9 @@ def save_outputs(rows: list[dict[str, Any]]) -> None:
                 "vote_count": int(row["vote_count"]),
                 "runtime": int(row["runtime"]),
                 "original_language": row["original_language"],
+
+                "poster_path": clean_text(row.get("poster_path", "")),
+                "backdrop_path": clean_text(row.get("backdrop_path", "")),
 
                 "document": row["document"],
             }

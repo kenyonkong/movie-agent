@@ -106,6 +106,12 @@ class MovieRecommendation(BaseModel):
     release_year: int | None = None
     genres: str | None = None
 
+    # TMDB image data
+    poster_path: str | None = None
+    poster_url: str | None = None
+    backdrop_path: str | None = None
+    backdrop_url: str | None = None
+
     # final score used for ranking
     score: float 
     # raw distance from the vector database (lower is more similar)

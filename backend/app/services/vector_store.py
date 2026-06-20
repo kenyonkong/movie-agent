@@ -160,6 +160,14 @@ class MovieVectorStore:
                         "vote_count",
                         0,
                     ),
+                    "poster_path": metadata.get(
+                        "poster_path",
+                        ""
+                    ),
+                    "backdrop_path": metadata.get(
+                        "backdrop_path", 
+                        ""
+                    ),
                     "distance": float(distance),
                     "document": document or "",
             })
@@ -208,4 +216,7 @@ class MovieVectorStore:
             "vote_count": int(
                 record.get("vote_count") or 0
             ),
+
+            "poster_path": str(record.get("poster_path") or ""),
+            "backdrop_path": str(record.get("backdrop_path") or ""),
         }

@@ -9,6 +9,12 @@ class RecommendationFormatter:
     The agent and reranker can use flexible dictionaries internally.
     The API response remains strongly validated by Pydantic.
     """
+
+    # TMDB image data
+    TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500"
+    TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/w780"
+
+
     def prepare_document_previews(
         self,
         candidates: list[dict[str, Any]],
@@ -69,6 +75,13 @@ class RecommendationFormatter:
             else None
         )
 
+        poster_path = self._optional_string(
+            candidate.get("poster_path")
+        )
+        backdrop_path = self._optional_string(
+            candidate.get("backdrop_path")
+        )
+
         return MovieRecommendation(
             movie_id=str(candidate.get("id")),
             title=str(
@@ -78,6 +91,19 @@ class RecommendationFormatter:
             genres=self._optional_string(
                 candidate.get("genres")
             ),
+            
+            # TMDB image data
+            poster_path=poster_path,
+            poster_url=self._build_tmdb_image_url(
+                self.TMDB_POSTER_BASE_URL,
+                poster_path
+            ),
+            backdrop_path=backdrop_path,
+            backdrop_url=self._build_tmdb_image_url(
+                self.TMDB_BACKDROP_BASE_URL,
+                backdrop_path
+            ),
+
             score=round(
                 float(candidate.get("final_score", 0.0)),
                 4,
@@ -151,3 +177,23 @@ class RecommendationFormatter:
 
         text = str(value).strip()
         return text or None
+    
+
+    def _build_tmdb_image_url(
+        self,
+        base_url: str,
+        image_path: Any,
+    ) -> str | None:
+        if image_path is None:
+            return None
+
+        path = str(image_path).strip()
+
+        if not path:
+            return None
+
+        # TMDB normally returns paths beginning with "/".
+        if not path.startswith("/"):
+            path = f"/{path}"
+
+        return f"{base_url}{path}"
