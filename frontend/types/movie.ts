@@ -42,6 +42,12 @@ export type MovieRecommendation = {
     release_year: number | null;
     genres: string | null;
 
+    // TMDB image data
+    poster_path: string | null;
+    poster_url: string | null;
+    backdrop_path: string | null;
+    backdrop_url: string | null;
+
     score: number;
     distance: number;
     semantic_score: number;
@@ -49,6 +55,7 @@ export type MovieRecommendation = {
     novelty_score: number;
     diversity_penalty: number;
 
+    // User preferences
     preference: PreferenceValue | null;
     watched: boolean;
     saved: boolean;
