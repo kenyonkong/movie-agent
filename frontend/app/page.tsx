@@ -32,6 +32,9 @@ export default function Home() {
   const [explanationProvider, setExplanationProvider] = useState<string | null>(
     null
   );
+  const [useLlmReranker, setUseLlmReranker] = useState(false);
+  const [rerankerProvider, setRerankerProvider] = useState<string | null>(null);
+  const [rerankerFallbackUsed, setRerankerFallbackUsed] = useState<boolean | null>(null);
 
   const [includeAgentTrace, setIncludeAgentTrace] = useState(true);
   const [agentTrace, setAgentTrace] = useState<AgentTrace | null>(null);
@@ -73,6 +76,7 @@ export default function Home() {
         top_k: topK,
         use_llm_explanations: useLlmExplanations,
         use_llm_intent: useLlmIntent,
+        use_llm_reranker: useLlmReranker,
         include_agent_trace: includeAgentTrace,
       });
       // setClientLatencyMs(performance.now() - startTime);
@@ -85,6 +89,8 @@ export default function Home() {
       setRetrievalQuery(resonse.retrieval_query);
       setParsedIntent(resonse.parsed_intent);
       setExplanationProvider(resonse.explanation_provider);
+      setRerankerProvider(resonse.reranker_provider);
+      setRerankerFallbackUsed(resonse.reranker_fallback_used);
       setAgentTrace(resonse.agent_trace);
       setLastQuery(trimmedQuery);
     } catch (err) {
@@ -96,6 +102,8 @@ export default function Home() {
       setRetrievalQuery(null);
       setParsedIntent(null);
       setExplanationProvider(null);
+      setRerankerProvider(null);
+      setRerankerFallbackUsed(null);
       setLastQuery(null);
       setAgentTrace(null);
       setError(err instanceof Error ? err.message : "An unknown error occurred.");
@@ -217,6 +225,7 @@ export default function Home() {
           includeWatched={includeWatched}
           useLlmExplanations={useLlmExplanations}
           useLlmIntent={useLlmIntent}
+          useLlmReranker={useLlmReranker}
           includeAgentTrace={includeAgentTrace}
           isLoading={isLoading}
           onQueryChange={setQuery}
@@ -224,6 +233,7 @@ export default function Home() {
           onIncludeWatchedChange={setIncludeWatched}
           onUseLlmExplanationsChange={setUseLlmExplanations}
           onUseLlmIntentChange={setUseLlmIntent}
+          onUseLlmRerankerChange={setUseLlmReranker}
           onIncludeAgentTraceChange={setIncludeAgentTrace}
           onSubmit={handleRecommend}
         />
@@ -267,6 +277,8 @@ export default function Home() {
           candidateCount={candidateCount}
           filteredWatchedCount={filteredWatchedCount}
           includeWatched={includeWatched}
+          rerankerProvider={rerankerProvider}
+          rerankerFallbackUsed={rerankerFallbackUsed}
           explanationProvider={explanationProvider}
           intentProvider={intentProvider}
           retrievalQuery={retrievalQuery}

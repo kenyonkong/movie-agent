@@ -77,18 +77,25 @@ class RecommendRequest(BaseModel):
         default=False,
         description="Whether to include movies the user has already watched in the recommendations.",
     )
-    use_llm_explanations: bool = Field(
-        default=False,
-        description=(
-            "Whether to generate explanations using the configured LLM provider. "
-            "If false, template explanations are used."
-        ),
-    )
     use_llm_intent: bool = Field(
         default=False,
         description=(
             "Whether to parse the raw query into structured movie intent using "
             "the configured intent parser provider."
+        ),
+    )
+    use_llm_reranker: bool = Field(
+        default=False,
+        description=(
+            "Whether the MovieAgent should use the configured bounded "
+            "LLM reranker over the heuristic candidate shortlist."
+        ),
+    )
+    use_llm_explanations: bool = Field(
+        default=False,
+        description=(
+            "Whether to generate explanations using the configured LLM provider. "
+            "If false, template explanations are used."
         ),
     )
     include_agent_trace: bool = Field(
@@ -123,7 +130,6 @@ class MovieRecommendation(BaseModel):
 
     # small boost for novelty
     novelty_score: float
-
     diversity_penalty: float
 
     # Current perference state. "like", "dislike", or None if no feedback given yet.
@@ -138,10 +144,15 @@ class MovieRecommendation(BaseModel):
     vote_average: float | None = None
     vote_count: int | None = None
 
+    # Rank using openAI
+    heuristic_rank: int | None = None
+    llm_rank: int | None = None
+    llm_rerank_reason: str | None = None
+
     reason: str
     document_preview: str
     # Debug information showing why this item received its final score.
-    ranking_signals: dict[str, float | bool | str]
+    ranking_signals: dict[str, float | bool | str | int]
 
 
 class RecommendResponse(BaseModel):
@@ -156,6 +167,9 @@ class RecommendResponse(BaseModel):
     candidate_count: int
     filtered_watched_count: int
     explanation_provider: str
+
+    reranker_provider: str
+    reranker_fallback_used: bool
 
     results: list[MovieRecommendation]
     latency_ms: float

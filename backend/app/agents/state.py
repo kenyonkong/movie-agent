@@ -31,3 +31,12 @@ class MovieAgentState:
 
     filtered_watched_count: int = 0
     watched_filter_fallback_used: bool = False
+
+    reranker_provider: str = "heuristic"
+    reranker_fallback_used: bool = False
+    reranker_fallback_reason: str | None = None
+
+    reranker_input_tokens: int = 0
+    reranker_output_tokens: int = 0
+
+    reranker_model_summary: str = ""

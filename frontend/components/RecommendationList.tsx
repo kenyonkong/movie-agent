@@ -14,6 +14,8 @@ type RecommendationListProps = {
     candidateCount: number | null;
     filteredWatchedCount: number | null;
     includeWatched: boolean;
+    rerankerProvider: string | null;
+    rerankerFallbackUsed: boolean | null;
     explanationProvider: string | null;
     intentProvider: string | null;
     retrievalQuery: string | null;
@@ -30,6 +32,8 @@ export function RecommendationList({
     candidateCount,
     filteredWatchedCount,
     includeWatched,
+    rerankerProvider,
+    rerankerFallbackUsed,
     userId,
     query,
     explanationProvider,
@@ -73,6 +77,24 @@ export function RecommendationList({
           </p>
         )}
 
+        {rerankerProvider && (
+          <span className="rounded-full border border-purple-800 bg-purple-950/40 px-4 py-2 text-sm text-slate-300">
+            Reranker: {rerankerProvider}
+          </span>
+        )}
+
+        {rerankerFallbackUsed && (
+          <span className="rounded-full border border-yellow-700 bg-yellow-950/40 px-4 py-2 text-sm text-yellow-200">
+            LLM reranker fallback used
+          </span>
+        )}
+
+        {explanationProvider && (
+          <p className="rounded-full border border-cyan-800 bg-cyan-950/40 px-4 py-2 text-sm text-cyan-200">
+            Explanations provided by: {explanationProvider}
+          </p>
+        )}  
+
         {includeWatched && (
           <p className="rounded-full border border-purple-800 bg-purple-950/40 px-4 py-2 text-sm text-purple-200">
             Including watched
@@ -80,11 +102,7 @@ export function RecommendationList({
         )}
       </div>
 
-      {explanationProvider && (
-        <p className="rounded-full border border-cyan-800 bg-cyan-950/40 px-4 py-2 text-sm text-cyan-200">
-          Explanations provided by: {explanationProvider}
-        </p>
-      )}
+
       
       {agentTrace && (
         <AgentTracePanel trace={agentTrace} />

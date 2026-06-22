@@ -123,6 +123,17 @@ export function MovieCard({
                       Saved
                     </span>
                   )}
+                   {movie.heuristic_rank != null && (
+                    <span className="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs text-slate-300 backdrop-blur-sm">
+                      Heuristic rank #{movie.heuristic_rank}
+                    </span>
+                  )}
+
+                  {movie.llm_rank != null && (
+                    <span className="rounded-full border border-purple-500/40 bg-purple-500/10 px-3 py-1 text-xs text-purple-200 backdrop-blur-sm">
+                      LLM rank #{movie.llm_rank}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -137,7 +148,7 @@ export function MovieCard({
                     {formatScore(movie.score)}
                   </p>
                 </div>
-
+                
                 <div className="text-xs text-slate-300">
                   Semantic: {formatScore(movie.semantic_score)}
                 </div>
@@ -167,6 +178,19 @@ export function MovieCard({
                 {movie.reason}
               </p>
             </div>
+
+            {/* Bounded LLM reranking reason */}
+            {movie.llm_rerank_reason && (
+              <div className="mb-4 rounded-2xl border border-purple-500/30 bg-purple-950/30 p-4 shadow-lg backdrop-blur-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-300">
+                  Bounded LLM reranker
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-slate-200">
+                  {movie.llm_rerank_reason}
+                </p>
+              </div>
+            )}
 
             {/* Ranking signals */}
             <details className="group mb-3">

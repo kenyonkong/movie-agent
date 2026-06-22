@@ -4,6 +4,7 @@ type SearchBarProps = {
     includeWatched: boolean;
     useLlmExplanations: boolean;
     useLlmIntent: boolean;
+    useLlmReranker: boolean;
     includeAgentTrace: boolean;
     isLoading: boolean;
     onQueryChange: (query: string) => void;
@@ -11,6 +12,7 @@ type SearchBarProps = {
     onIncludeWatchedChange: (includeWatched: boolean) => void;
     onUseLlmExplanationsChange: (useLlmExplanations: boolean) => void;
     onUseLlmIntentChange: (useLlmIntent: boolean) => void;
+    onUseLlmRerankerChange: (useLlmReranker: boolean) => void;
     onIncludeAgentTraceChange: (includeAgentTrace: boolean) => void;
     onSubmit: () => void;
 };
@@ -29,6 +31,7 @@ export function SearchBar({
     includeWatched,
     useLlmExplanations,
     useLlmIntent,
+    useLlmReranker,
     includeAgentTrace,
     isLoading,
     onQueryChange,
@@ -36,6 +39,7 @@ export function SearchBar({
     onIncludeWatchedChange,
     onUseLlmExplanationsChange,
     onUseLlmIntentChange,
+    onUseLlmRerankerChange,
     onIncludeAgentTraceChange,
     onSubmit,
 }: SearchBarProps) {
@@ -102,6 +106,15 @@ export function SearchBar({
                 className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
               />
               Use LLM intent parser
+            </label>
+            <label className="flex items-center gap-3 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={useLlmReranker}
+                onChange={(event) => onUseLlmRerankerChange(event.target.checked)}
+                className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
+              />
+              Use LLM reranker
             </label>
             <label className="flex items-center gap-3 text-sm text-slate-300">
               <input

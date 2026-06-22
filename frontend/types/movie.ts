@@ -64,6 +64,11 @@ export type MovieRecommendation = {
     vote_average: number | null;
     vote_count: number | null;
 
+    // LLM reranker
+    heuristic_rank: number | null;
+    llm_rank: number | null;
+    llm_rerank_reason: string | null;
+
     reason: string;
     document_preview: string;
 
@@ -77,6 +82,7 @@ export type RecommendRequest = {
     include_watched: boolean;
     use_llm_explanations: boolean;
     use_llm_intent: boolean;
+    use_llm_reranker: boolean;
     include_agent_trace: boolean;
 };
 
@@ -92,6 +98,9 @@ export type RecommendResponse = {
     candidate_count: number;
     filtered_watched_count: number;
     explanation_provider: string;
+
+    reranker_provider: string;
+    reranker_fallback_used: boolean;
 
     results: MovieRecommendation[];
     latency_ms: number;

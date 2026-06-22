@@ -4,7 +4,7 @@ from typing import Any
 from app.agents.movie_agent import MovieAgent
 from app.db.schemas import MovieIntent, RecommendRequest
 from app.services.recommendation_formatter import RecommendationFormatter
-
+from app.services.bounded_llm_reranker import BoundedRerankResult
 
 class FakeIntentParser:
     provider = "fake"
@@ -196,6 +196,50 @@ class FakeExplanationService:
         return "fake-explanation"
 
 
+class FakeBoundedLLMReranker:
+    provider = "fake"
+    model = "fake-reranker"
+    shortlist_size = 10
+
+    def __init__(
+        self,
+        calls: list[str],
+    ) -> None:
+        self.calls = calls
+
+    def get_configured_provider_name(
+        self,
+    ) -> str:
+        return "fake-reranker"
+
+    def rerank(
+        self,
+        *,
+        original_query: str,
+        retrieval_query: str,
+        parsed_intent: Any,
+        user_memory: dict[str, Any],
+        candidates: list[dict[str, Any]],
+        top_k: int,
+        enabled: bool,
+    ) -> BoundedRerankResult:
+        self.calls.append("llm_rerank")
+
+        selected = candidates[:top_k]
+
+        return BoundedRerankResult(
+            candidates=selected,
+            provider_name="fake-reranker",
+            used_llm=True,
+            fallback_used=False,
+            fallback_reason=None,
+            selected_movie_ids=[
+                str(item["id"])
+                for item in selected
+            ],
+        )
+
+
 def test_movie_agent_coordinates_tools_in_order() -> None:
     calls: list[str] = []
 
@@ -204,6 +248,7 @@ def test_movie_agent_coordinates_tools_in_order() -> None:
         memory_service=FakeMemoryService(calls),
         vector_store=FakeVectorStore(calls),
         reranker=FakeReranker(calls),
+        llm_reranker=FakeBoundedLLMReranker(calls),
         explanation_service=(
             FakeExplanationService(calls)
         ),
@@ -217,6 +262,7 @@ def test_movie_agent_coordinates_tools_in_order() -> None:
         include_watched=False,
         use_llm_explanations=False,
         use_llm_intent=True,
+        use_llm_reranker=True,
         include_agent_trace=True,
     )
 
@@ -231,6 +277,7 @@ def test_movie_agent_coordinates_tools_in_order() -> None:
         "retrieve",
         "filter_watched",
         "rerank",
+        "llm_rerank",
         "explain",
     ]
 
@@ -266,4 +313,4 @@ def test_movie_agent_coordinates_tools_in_order() -> None:
         if step.name == "bounded_llm_rerank"
     )
 
-    assert bounded_step.status == "skipped"
+    assert bounded_step.status == "completed"

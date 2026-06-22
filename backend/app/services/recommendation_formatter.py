@@ -140,6 +140,19 @@ class RecommendationFormatter:
             vote_count=self._safe_int(
                 candidate.get("vote_count")
             ),
+            
+            # LLM ranking data
+            heuristic_rank=self._safe_int(
+                candidate.get("heuristic_rank")
+            ),
+            llm_rank=self._safe_int(
+                candidate.get("llm_rank")
+            ),
+            llm_rerank_reason=self._optional_string(
+                candidate.get("llm_rerank_reason")
+            ),
+
+
             reason=explanation,
             document_preview=str(
                 candidate.get("document_preview") or ""

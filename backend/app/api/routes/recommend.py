@@ -57,13 +57,18 @@ def recommend_debug() -> dict:
     return {
         "agent": {
             "name": "movie_agent",
-            "version": "day15",
-            "workflow": "deterministic_tool_orchestration",
+            "version": "day16",
+            "workflow": (
+                "deterministic_tool_orchestration"
+            ),
         },
         "vector_store": {
-            "count": movie_agent.vector_store.count(),
+            "count": (
+                movie_agent.vector_store.count()
+            ),
             "collection": (
-                movie_agent.vector_store.collection_name
+                movie_agent.vector_store
+                .collection_name
             ),
             "embedding_provider": (
                 embedding_service.provider
@@ -71,23 +76,43 @@ def recommend_debug() -> dict:
             "embedding_model": (
                 embedding_service.model_name
             ),
-            "embedding_dimensions": (
-                embedding_service.actual_dimension
-            ),
         },
         "tools": {
-            "intent_provider": (
-                movie_agent.intent_parser.provider
-            ),
-            "intent_model": (
-                movie_agent.intent_parser.model
-            ),
-            "explanation_provider": (
-                movie_agent.explanation_service.provider
-            ),
-            "explanation_model": (
-                movie_agent.explanation_service.model
-            ),
-            "bounded_llm_reranker": "not_enabled",
+            "intent_parser": {
+                "provider": (
+                    movie_agent.intent_parser
+                    .provider
+                ),
+                "model": (
+                    movie_agent.intent_parser
+                    .model
+                ),
+            },
+            "bounded_llm_reranker": {
+                "provider": (
+                    movie_agent.llm_reranker
+                    .provider
+                ),
+                "model": (
+                    movie_agent.llm_reranker
+                    .model
+                ),
+                "shortlist_size": (
+                    movie_agent.llm_reranker
+                    .shortlist_size
+                ),
+            },
+            "explanation_service": {
+                "provider": (
+                    movie_agent
+                    .explanation_service
+                    .provider
+                ),
+                "model": (
+                    movie_agent
+                    .explanation_service
+                    .model
+                ),
+            },
         },
     }

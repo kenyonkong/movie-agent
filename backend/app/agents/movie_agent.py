@@ -11,6 +11,7 @@ from app.services.memory_service import MemoryService # the service for the user
 from app.services.recommendation_formatter import RecommendationFormatter # the service for formatting the recommendations to schemas
 from app.services.reranker import MovieReranker # the service for re-ranking the recommendations (llm or local)
 from app.services.vector_store import MovieVectorStore # the ChromaDB vector store for the movies, 19985 entries
+from app.services.bounded_llm_reranker import BoundedLLMReranker # the service for re-ranking the recommendations with a bounded LLM
 
 
 class MovieAgent:
@@ -34,6 +35,7 @@ class MovieAgent:
         vector_store: MovieVectorStore | None = None,
         explanation_service: ExplanationService | None = None,
         formatter: RecommendationFormatter | None = None,
+        llm_reranker: BoundedLLMReranker | None = None,
         reranker: MovieReranker | None = None
     ) -> None:
         self.intent_parser = intent_parser or IntentParserService()
@@ -41,6 +43,7 @@ class MovieAgent:
         self.vector_store = vector_store or MovieVectorStore()
         self.explanation_service = explanation_service or ExplanationService()
         self.formatter = formatter or RecommendationFormatter()
+        self.llm_reranker = llm_reranker or BoundedLLMReranker()
         self.reranker = reranker or MovieReranker()
     
 
@@ -63,7 +66,7 @@ class MovieAgent:
         self._retrieve_candidates(state, tracer)
         self._filter_watched_candidates(state, tracer)
         self._heuristic_rerank(state, tracer)
-        self._bounded_llm_rerank_placeholder(state, tracer)
+        self._bounded_llm_rerank(state, tracer)
         self._generate_explanations(state, tracer)
 
         format_started_at = tracer.start_step()
@@ -106,6 +109,10 @@ class MovieAgent:
                     ),
                 )
             ),
+            
+            reranker_provider=state.reranker_provider,
+            reranker_fallback_used=state.reranker_fallback_used,
+
             results=recommendations,
             latency_ms=round(total_latency_ms, 2),
             agent_trace=tracer.build(),
@@ -353,8 +360,13 @@ class MovieAgent:
         try:
             # Retrieve more than final top_k here so Day 16 can let the
             # bounded LLM reranker inspect a controlled shortlist.
+            shortlist_target = max(
+                state.request.top_k,
+                self.llm_reranker.shortlist_size
+            )
+
             heuristic_top_k = min(
-                max(state.request.top_k * 3, 10),
+                shortlist_target,
                 len(state.candidates_for_reranking),
             )
 
@@ -403,38 +415,156 @@ class MovieAgent:
             raise
         
 
-    def _bounded_llm_rerank_placeholder(
+    def _bounded_llm_rerank(
         self,
         state: MovieAgentState,
         tracer: AgentTracer,
     ) -> None:
         """
-        Day 15 deliberately does not implement LLM reranking.
-
-        Until Day 16, take the first top_k results from the heuristic
-        shortlist. This creates an explicit extension point.
+        Optionally select final top-k movies from the bounded heuristic
+        shortlist.
         """
-        state.final_candidates = (
-            state.heuristic_candidates[
-                : state.request.top_k
-            ]
-        )
+        started_at = tracer.start_step()
 
-        tracer.skip(
-            name="bounded_llm_rerank",
-            reason=(
-                "Bounded LLM reranking is disabled until Day 16. "
-                "Using heuristic ranking order."
-            ),
-            details={
-                "available_shortlist_count": len(
-                    state.heuristic_candidates
+        if state.parsed_intent is None:
+            raise RuntimeError(
+                "Cannot run LLM reranking without parsed intent."
+            )
+        
+        if not state.request.use_llm_reranker:
+            state.final_candidates = (
+                state.heuristic_candidates[
+                    : state.request.top_k
+                ]
+            )
+
+            state.reranker_provider = "heuristic"
+
+            tracer.skip(
+                name="bounded_llm_rerank",
+                reason=(
+                    "The request did not enable bounded "
+                    "LLM reranking."
                 ),
-                "selected_count": len(
-                    state.final_candidates
-                ),
-            },
-        )
+                details={
+                    "shortlist_count": len(
+                        state.heuristic_candidates
+                    ),
+                    "selected_count": len(
+                        state.final_candidates
+                    ),
+                },
+            )
+            return
+
+        try:
+            result = self.llm_reranker.rerank(
+                original_query=state.request.query,
+                retrieval_query=state.retrieval_query,
+                parsed_intent=state.parsed_intent,
+                user_memory=state.user_memory,
+                candidates=state.heuristic_candidates,
+                top_k=state.request.top_k,
+                enabled=True,
+            )
+
+            state.final_candidates = result.candidates
+
+            state.reranker_provider = (
+                result.provider_name
+            )
+
+            state.reranker_fallback_used = (
+                result.fallback_used
+            )
+
+            state.reranker_fallback_reason = (
+                result.fallback_reason
+            )
+
+            state.reranker_input_tokens = (
+                result.input_tokens
+            )
+
+            state.reranker_output_tokens = (
+                result.output_tokens
+            )
+
+            state.reranker_model_summary = (
+                result.model_summary
+            )
+
+            tracer.complete(
+                name="bounded_llm_rerank",
+                started_at=started_at,
+                details={
+                    "configured_provider": (
+                        self.llm_reranker
+                        .get_configured_provider_name()
+                    ),
+                    "actual_provider": (
+                        result.provider_name
+                    ),
+                    "shortlist_count": len(
+                        state.heuristic_candidates
+                    ),
+                    "selected_count": len(
+                        state.final_candidates
+                    ),
+                    "selected_movie_ids": (
+                        result.selected_movie_ids
+                    ),
+                    "used_llm": result.used_llm,
+                    "fallback_used": (
+                        result.fallback_used
+                    ),
+                    "fallback_reason": (
+                        result.fallback_reason
+                    ),
+                    "input_tokens": (
+                        result.input_tokens
+                    ),
+                    "output_tokens": (
+                        result.output_tokens
+                    ),
+                    "model_summary": (
+                        result.model_summary[:300]
+                    ),
+                },
+            )
+
+        except Exception as error:
+            # This should rarely execute because the service itself
+            # already falls back. It protects against unexpected bugs.
+            state.final_candidates = (
+                state.heuristic_candidates[
+                    : state.request.top_k
+                ]
+            )
+
+            state.reranker_provider = (
+                "heuristic:fallback"
+            )
+            state.reranker_fallback_used = True
+            state.reranker_fallback_reason = str(
+                error
+            )[:300]
+
+            tracer.complete(
+                name="bounded_llm_rerank",
+                started_at=started_at,
+                details={
+                    "actual_provider": (
+                        "heuristic:fallback"
+                    ),
+                    "fallback_used": True,
+                    "fallback_reason": str(
+                        error
+                    )[:300],
+                },
+            )
+
+        
         
     def _generate_explanations(
         self, 

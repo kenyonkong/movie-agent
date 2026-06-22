@@ -85,5 +85,13 @@ class Settings(BaseModel):
         f"sqlite:///{sqlite_db_path}"
     )
 
+    # ---------------------------------------------------------
+    # Bounded LLM reranker
+    # ---------------------------------------------------------
+    llm_reranker_provider: str = os.getenv("LLM_RERANKER_PROVIDER", "disabled")
+    openai_reranker_model: str = os.getenv("OPENAI_RERANKER_MODEL", "gpt-5.4-mini")
+    llm_reranker_shortlist_size: int = int(os.getenv("LLM_RERANKER_SHORTLIST_SIZE", 15))
+    llm_reranker_max_overview_chars: int = int(os.getenv("LLM_RERANKER_MAX_OVERVIEW_CHARS", 500))
+
 
 settings = Settings()
