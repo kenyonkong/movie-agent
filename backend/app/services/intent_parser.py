@@ -4,7 +4,7 @@ import re
 from openai import OpenAI
 
 from app.core.config import settings
-from app.db.schemas import MovieIntent
+from app.db.schemas import MovieIntent, MovieHardConstraints
 
 class IntentParserService:
     """
@@ -87,42 +87,148 @@ class IntentParserService:
             )
             return self._parse_with_template(query)
     
-    def _parse_with_template(self, query: str) -> MovieIntent:
-        """
-        Lightweight fallback parser.
 
-        This does not try to be smart. It preserves the raw query and extracts
-        a few obvious constraints using simple keyword rules.
-        """
-        cleaned_query = re.sub(r"\s+", " ", query).strip()
+    def _parse_with_template(
+        self,
+        query: str,
+    ) -> MovieIntent:
+        cleaned_query = re.sub(
+            r"\s+",
+            " ",
+            query,
+        ).strip()
 
-        # lower_query = cleaned_query.lower()
-        # avoid = []
-        # if "not too slow" in lower_query:
-        #     avoid.append("too slow")
+        lower_query = cleaned_query.lower()
 
-        # if "not too depressing" in lower_query:
-        #     avoid.append("too depressing")
+        avoid: list[str] = []
+        readable_constraints: list[str] = []
 
-        # if "not too scary" in lower_query:
-        #     avoid.append("too scary")
+        hard = MovieHardConstraints()
 
-        # if "not too violent" in lower_query:
-        #     avoid.append("too violent")
+        if "not too slow" in lower_query:
+            avoid.append("too slow")
+
+        if "not too depressing" in lower_query:
+            avoid.append("too depressing")
+
+        if "not too scary" in lower_query:
+            avoid.append("too scary")
+
+        # "under 150 minutes" means strictly below 150.
+        under_minutes_match = re.search(
+            r"\bunder\s+(\d+)\s+minutes?\b",
+            lower_query,
+        )
+
+        if under_minutes_match:
+            boundary = int(
+                under_minutes_match.group(1)
+            )
+
+            hard.max_runtime = boundary - 1
+
+            readable_constraints.append(
+                f"Runtime under {boundary} minutes"
+            )
+
+        at_most_minutes_match = re.search(
+            r"\bat most\s+(\d+)\s+minutes?\b",
+            lower_query,
+        )
+
+        if at_most_minutes_match:
+            boundary = int(
+                at_most_minutes_match.group(1)
+            )
+
+            hard.max_runtime = boundary
+
+            readable_constraints.append(
+                f"Runtime at most {boundary} minutes"
+            )
+
+        if "under two hours" in lower_query:
+            hard.max_runtime = 119
+            readable_constraints.append(
+                "Runtime under two hours"
+            )
+
+        if "at most two hours" in lower_query:
+            hard.max_runtime = 120
+            readable_constraints.append(
+                "Runtime at most two hours"
+            )
+
+        before_year_match = re.search(
+            r"\bbefore\s+((?:18|19|20)\d{2})\b",
+            lower_query,
+        )
+
+        if before_year_match:
+            boundary = int(
+                before_year_match.group(1)
+            )
+
+            hard.max_release_year = boundary - 1
+
+            readable_constraints.append(
+                f"Released before {boundary}"
+            )
+
+        after_year_match = re.search(
+            r"\bafter\s+((?:18|19|20)\d{2})\b",
+            lower_query,
+        )
+
+        if after_year_match:
+            boundary = int(
+                after_year_match.group(1)
+            )
+
+            hard.min_release_year = boundary + 1
+
+            readable_constraints.append(
+                f"Released after {boundary}"
+            )
+
+        language_phrases = {
+            r"\b(?:english-language|english language|movies? in english)\b": "en",
+            r"\b(?:korean-language|korean language|movies? in korean)\b": "ko",
+            r"\b(?:french-language|french language|movies? in french)\b": "fr",
+            r"\b(?:japanese-language|japanese language|movies? in japanese)\b": "ja",
+            r"\b(?:spanish-language|spanish language|movies? in spanish)\b": "es",
+            r"\b(?:chinese-language|chinese language|movies? in chinese)\b": "zh",
+        }
+
+        for phrase, language_code in (
+            language_phrases.items()
+        ):
+            if phrase in lower_query:
+                hard.allowed_languages.append(
+                    language_code
+                )
+
+                readable_constraints.append(
+                    f"Original language: {language_code}"
+                )
 
         return MovieIntent(
             raw_query=query,
             query_rewrite=cleaned_query,
-            reference_movies=[], 
-            moods=[], 
+            reference_movies=[],
+            moods=[],
             themes=[],
             genres=[],
-            pacing=None, 
-            tone=[], 
-            avoid=[], 
-            constraints=[],
-            confidence=0.3,
-            parser_notes="Template parser used. Query rewrite is mostly the original query.",
+            pacing=None,
+            tone=[],
+            avoid=avoid,
+            constraints=readable_constraints,
+            hard_constraints=hard,
+            confidence=0.1,
+            parser_notes=(
+                "Conservative template parser used. "
+                "Only obvious numeric and language constraints were extracted."
+            ),
         )
 
 
@@ -133,137 +239,93 @@ class IntentParserService:
         # if self.client is None:
         #     raise ValueError("OpenAI client is not initialized.")
 
-        schema = self._intent_json_schema()
-
         client = self._get_client()
-        response = client.responses.create(
-            model=self.model, 
-            input=[
-                {"role":"system",
-                "content":self._system_prompt(), 
-                }, 
-                {"role":"user", 
-                "content":query,
-                },
-            ],
-            text={
-                "format": {
-                    "type": "json_schema", 
-                    "name": "Movie_intent",
-                    "schema": schema,
-                    "strict": True,
-                }
-            }, 
-            temperature=0.2, 
+
+        response = client.responses.parse(
+            model=self.model,
+            instructions=self._system_prompt(),
+            input=query,
+            text_format=MovieIntent
+        )
+        
+        parsed_intent = response.output_parsed
+        if parsed_intent is None:
+            raise ValueError(
+                "OpenAI returned no parsed MovieIntent."
+            )
+
+        # The application, not the model, is authoritative for raw_query.
+        return parsed_intent.model_copy(
+            update={
+                "raw_query": query,
+            }
         )
 
-        parsed = json.loads(response.output_text)
-        return MovieIntent(**parsed)
 
 
     def _system_prompt(self) -> str:
-            return """
-    You are an intent parser for a movie recommendation system.
+        return """
+You are an intent parser for a movie recommendation system.
 
-    Your job is to convert a user's raw natural-language request into structured intent.
+Your job is to convert a user's natural-language request into a
+structured MovieIntent object.
 
-    Important rules:
-    - Do not recommend movies.
-    - Do not invent facts about movies.
-    - Extract only what the user asked for.
-    - If the user gives a reference movie, include it in reference_movies.
-    - If the user says what to avoid, include it in avoid.
-    - Create a query_rewrite optimized for semantic vector search.
-    - The query_rewrite should be concise but information-rich.
-    - The query_rewrite should preserve the user's main intent.
-    - Do not include movies in query_rewrite unless they help retrieval.
-    """.strip()
+You do not recommend movies.
 
+Separate soft preferences from hard constraints.
 
-    def _intent_json_schema(self) -> dict:
-        """
-        JSON Schema used for OpenAI Structured Outputs.
+A hard constraint is an explicit requirement that every returned movie
+must satisfy. Examples include:
 
-        We require every field so the returned object is predictable.
-        Fields that do not apply should be empty arrays, null, or empty strings.
-        """
-        return {
-            "type": "object",
-            "additionalProperties": False,
-            "required": [
-                "raw_query",
-                "query_rewrite",
-                "reference_movies",
-                "moods",
-                "themes",
-                "genres",
-                "pacing",
-                "tone",
-                "avoid",
-                "constraints",
-                "confidence",
-                "parser_notes",
-            ],
-            "properties": {
-                "raw_query": {
-                    "type": "string",
-                    "description": "The original user query.",
-                },
-                "query_rewrite": {
-                    "type": "string",
-                    "description": (
-                        "A concise semantic-search query preserving the user's "
-                        "main intent, mood, themes, constraints, and references."
-                    ),
-                },
-                "reference_movies": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Movie titles explicitly mentioned by the user.",
-                },
-                "moods": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Mood words such as lonely, warm, tense, melancholic.",
-                },
-                "themes": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Themes such as memory, identity, grief, friendship.",
-                },
-                "genres": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Genres explicitly requested or strongly implied.",
-                },
-                "pacing": {
-                    "type": ["string", "null"],
-                    "description": "Desired pacing, such as slow, medium, fast, or null.",
-                },
-                "tone": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Tone descriptors such as hopeful, dark, funny.",
-                },
-                "avoid": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Things the user wants to avoid.",
-                },
-                "constraints": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Other constraints, such as not too long or family-friendly.",
-                },
-                "confidence": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 1,
-                    "description": "Confidence in the parsed intent.",
-                },
-                "parser_notes": {
-                    "type": "string",
-                    "description": "Brief explanation of parsing choices.",
-                },
-            },
-        }
+- "Only Christopher Nolan movies."
+- "It must star Leonardo DiCaprio."
+- "Under 150 minutes."
+- "At most two hours."
+- "Released before 2010."
+- "Korean-language movies only."
+- "No horror."
+- "Rated at least 7."
+
+Do not convert vague preferences into hard constraints.
+
+Examples:
+
+- "Something like Christopher Nolan" is not a director constraint.
+- "Prefer something short" is not a maximum runtime.
+- "Maybe Korean" is not a language constraint.
+- "Not too slow" is a soft pacing preference, not a numeric runtime rule.
+
+Interpret numeric boundaries precisely:
+
+- "under 150 minutes" means max_runtime = 149
+- "at most 150 minutes" means max_runtime = 150
+- "over 120 minutes" means min_runtime = 121
+- "at least 120 minutes" means min_runtime = 120
+- "before 2010" means max_release_year = 2009
+- "after 2000" means min_release_year = 2001
+- "from 2000 onward" means min_release_year = 2000
+- "around 120 minutes" means min_runtime = 105 and max_runtime = 135
+- For approximate runtime requests using words like "around", "about", or "roughly" followed by a number, use a tolerance of ±15 minutes unless the user gives a more specific range.
+
+Language fields should use ISO-style TMDB language codes when known:
+
+- English → en
+- Korean → ko
+- French → fr
+- Japanese → ja
+- Spanish → es
+- Chinese → zh
+
+Rules:
+
+1. Do not recommend movies.
+2. Do not invent movie facts.
+3. Preserve explicitly mentioned reference movies.
+4. Put vague mood, tone, pacing, theme, and style preferences in the
+   normal intent fields.
+5. Put only enforceable requirements in hard_constraints.
+6. Create a concise, information-rich query_rewrite for semantic search.
+7. Preserve hard requirements in the query rewrite as retrieval hints,
+   even though they will also be enforced deterministically.
+8. Return empty arrays or null values when a constraint is absent.
+""".strip()
