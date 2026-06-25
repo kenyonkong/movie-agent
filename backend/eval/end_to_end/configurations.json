@@ -1,0 +1,73 @@
+[
+  {
+    "name": "local_raw",
+    "enabled": true,
+    "mode": "raw_retrieval",
+    "embedding_provider": "local",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_dimensions": null,
+    "intent_provider": "template",
+    "use_llm_intent": false,
+    "llm_reranker_provider": "disabled",
+    "use_llm_reranker": false,
+    "latency_repeats": 3,
+    "notes": "Baseline local embedding retrieval using the raw user query."
+  },
+  {
+    "name": "openai_raw",
+    "enabled": true,
+    "mode": "raw_retrieval",
+    "embedding_provider": "openai",
+    "embedding_model": "text-embedding-3-small",
+    "embedding_dimensions": null,
+    "intent_provider": "template",
+    "use_llm_intent": false,
+    "llm_reranker_provider": "disabled",
+    "use_llm_reranker": false,
+    "latency_repeats": 3,
+    "notes": "Measures the embedding-model change while keeping retrieval logic fixed."
+  },
+  {
+    "name": "openai_intent_retrieval",
+    "enabled": true,
+    "mode": "intent_retrieval",
+    "embedding_provider": "openai",
+    "embedding_model": "text-embedding-3-small",
+    "embedding_dimensions": null,
+    "intent_provider": "openai",
+    "use_llm_intent": true,
+    "llm_reranker_provider": "disabled",
+    "use_llm_reranker": false,
+    "latency_repeats": 1,
+    "notes": "Adds LLM intent parsing and query rewrite but no heuristic reranking."
+  },
+  {
+    "name": "openai_agent_heuristic",
+    "enabled": true,
+    "mode": "agent",
+    "embedding_provider": "openai",
+    "embedding_model": "text-embedding-3-small",
+    "embedding_dimensions": null,
+    "intent_provider": "openai",
+    "use_llm_intent": true,
+    "llm_reranker_provider": "disabled",
+    "use_llm_reranker": false,
+    "latency_repeats": 1,
+    "notes": "Adds memory, watched filtering, heuristic ranking, novelty, and diversity."
+  },
+  {
+    "name": "openai_agent_llm",
+    "enabled": true,
+    "mode": "agent",
+    "embedding_provider": "openai",
+    "embedding_model": "text-embedding-3-small",
+    "embedding_dimensions": null,
+    "intent_provider": "openai",
+    "use_llm_intent": true,
+    "llm_reranker_provider": "openai",
+    "llm_reranker_model": "gpt-5.4-mini",
+    "use_llm_reranker": true,
+    "latency_repeats": 1,
+    "notes": "Complete pipeline including bounded LLM reranking."
+  }
+]

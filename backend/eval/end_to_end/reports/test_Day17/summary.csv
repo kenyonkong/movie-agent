@@ -1,0 +1,6 @@
+config_name,query_count,error_count,fallback_rate,total_input_tokens,total_output_tokens,latency_p50_ms,latency_p95_ms,hit_at_k,precision_at_k,recall_at_k,reciprocal_rank,ndcg_at_k,judgment_coverage,intra_list_diversity,average_catalog_novelty,constraint_check_accuracy,fully_valid_result_rate,top1_fully_valid
+local_raw,8,0,0.0,0,0,12.7,13.6995,0.5,0.15,0.15,0.3125,0.3528,1.0,0.6677,0.3231,0.4778,0.2667,0.1667
+openai_raw,8,0,0.0,0,0,222.53,441.107,0.625,0.25,0.25,0.4583,0.5827,1.0,0.5817,0.2203,0.85,0.7,0.6667
+openai_intent_retrieval,8,0,0.0,0,0,1642.01,2125.919,0.625,0.225,0.225,0.3625,0.5247,0.925,0.5865,0.3025,0.8055,0.6333,0.6667
+openai_agent_heuristic,8,0,0.0,0,0,1539.34,1636.1045,0.5,0.2,0.2,0.4062,0.5309,0.95,0.7518,0.2791,0.8055,0.6333,0.6667
+openai_agent_llm,8,0,0.0,42491,1563,4280.91,5883.9345,0.75,0.275,0.275,0.75,0.7653,0.775,0.5844,0.2234,0.9556,0.9,1.0

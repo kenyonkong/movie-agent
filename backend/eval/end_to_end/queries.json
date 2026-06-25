@@ -1,0 +1,157 @@
+[
+  {
+    "id": "nolan_under_150",
+    "query": "Only recommend Christopher Nolan movies under 150 minutes involving dreams, memory, identity, or time.",
+    "user_id": "eval_neutral",
+    "top_k": 5,
+    "relevant_titles": [
+      "Inception",
+      "Memento",
+      "The Prestige",
+      "Tenet", 
+      "Dunkirk"
+    ],
+    "hard_constraints": {
+      "allowed_directors": [
+        "Christopher Nolan"
+      ],
+      "max_runtime": 150
+    },
+    "notes": "Tests director and runtime constraints together with thematic relevance."
+  },
+  {
+    "id": "dicaprio_uncertain_reality",
+    "query": "A Leonardo DiCaprio movie about paranoia, obsession, dreams, or uncertain reality.",
+    "user_id": "eval_neutral",
+    "top_k": 5,
+    "relevant_titles": [
+      "Inception",
+      "Shutter Island",
+      "The Aviator",
+      "The Departed",
+      "J. Edgar"
+    ],
+    "hard_constraints": {
+      "required_cast": [
+        "Leonardo DiCaprio"
+      ]
+    },
+    "notes": "Tests exact cast metadata and thematic retrieval."
+  },
+  {
+    "id": "quiet_emotional_scifi",
+    "query": "Quiet emotional science fiction about memory, identity, loneliness, technology, and human connection.",
+    "user_id": "eval_neutral",
+    "top_k": 5,
+    "relevant_titles": [
+      "Her",
+      "After Yang",
+      "Arrival",
+      "Eternal Sunshine of the Spotless Mind",
+      "Ex Machina"
+    ],
+    "hard_constraints": {},
+    "notes": "A nuanced semantic query without an exact metadata constraint."
+  },
+  {
+    "id": "korean_thriller_after_2000",
+    "query": "A Korean-language thriller released after 2000 with moral ambiguity and social tension.",
+    "user_id": "eval_neutral",
+    "top_k": 5,
+    "relevant_titles": [
+      "Parasite",
+      "Memories of Murder",
+      "The Handmaiden",
+      "The Wailing",
+      "Burning"
+    ],
+    "hard_constraints": {
+      "required_genres": [
+        "Thriller"
+      ],
+      "allowed_languages": [
+        "ko"
+      ],
+      "min_release_year": 2000
+    },
+    "notes": "Tests language, release-year, and genre constraints."
+  },
+  {
+    "id": "family_animation_under_120",
+    "query": "A warm animated family movie under two hours about grief, memory, family, or growing up.",
+    "user_id": "eval_neutral",
+    "top_k": 5,
+    "relevant_titles": [
+      "Coco",
+      "Inside Out",
+      "Up",
+      "The Lion King",
+      "Turning Red"
+    ],
+    "hard_constraints": {
+      "required_genres": [
+        "Animation",
+        "Family"
+      ],
+      "max_runtime": 120
+    },
+    "notes": "Tests multiple required genres and runtime."
+  },
+  {
+    "id": "french_romance_before_2010",
+    "query": "A French-language romance released before 2010 with a whimsical or melancholic tone.",
+    "user_id": "eval_neutral",
+    "top_k": 5,
+    "relevant_titles": [
+      "Amélie",
+      "The Umbrellas of Cherbourg",
+      "Love Me If You Dare", 
+      "A Very Long Engagement",
+      "The Girl on the Bridge"
+    ],
+    "hard_constraints": {
+      "required_genres": [
+        "Romance"
+      ],
+      "allowed_languages": [
+        "fr"
+      ],
+      "max_release_year": 2009
+    },
+    "notes": "Tests language, genre, and historical range."
+  },
+  {
+    "id": "antiwar_survival",
+    "query": "An intense anti-war movie focused on fear, suffering, and survival rather than heroic glory.",
+    "user_id": "eval_neutral",
+    "top_k": 5,
+    "relevant_titles": [
+      "Come and See",
+      "All Quiet on the Western Front",
+      "Paths of Glory",
+      "1917",
+      "Grave of the Fireflies"
+    ],
+    "hard_constraints": {},
+    "notes": "Tests thematic nuance and avoidance of simplistic heroic war films."
+  },
+  {
+    "id": "character_driven_action",
+    "query": "A stylish action movie where believable character motivation matters more than empty spectacle.",
+    "user_id": "eval_neutral",
+    "top_k": 5,
+    "relevant_titles": [
+      "Mad Max: Fury Road",
+      "The Dark Knight",
+      "Logan",
+      "Casino Royale",
+      "Kill Bill: Vol. 1"
+    ],
+    "hard_constraints": {
+      "required_genres": [
+        "Action"
+      ]
+    },
+    "notes": "Tests a conditional preference that genre counting cannot represent."
+  }
+]

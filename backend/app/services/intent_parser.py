@@ -15,19 +15,44 @@ class IntentParserService:
     It only extracts user intent and creates a better retrieval query.
     """
 
-    def __init__(self) -> None:
-        self.provider = settings.intent_parser_provider.lower().strip()
-        self.model = settings.openai_intent_model
+    def __init__(
+        self, 
+        provider: str | None = None, 
+        model: str | None = None,            
+    ) -> None:
+        self.provider = (
+            provider or settings.intent_parser_provider
+        ).strip().lower()
+
+        self.model = (
+            model or settings.openai_intent_model
+        )
 
         self.client: OpenAI | None = None
 
-        if self.provider == "openai":
-            if not settings.openai_api_key:
-                raise ValueError("OpenAI API key is required for the OpenAI intent parser.")
+        # if self.provider == "openai":
+            # if not settings.openai_api_key:
+            #     raise ValueError("OpenAI API key is required for the OpenAI intent parser.")
             
-            self.client = OpenAI(api_key=settings.openai_api_key)
+            # self.client = OpenAI(api_key=settings.openai_api_key)
         
     
+    def _get_client(self) -> OpenAI:
+        if self.client is not None:
+            return self.client
+
+        if not settings.openai_api_key:
+            raise RuntimeError(
+                "OPENAI_API_KEY is required for OpenAI intent parsing."
+            )
+
+        self.client = OpenAI(
+            api_key=settings.openai_api_key
+        )
+
+        return self.client
+
+
     def get_provider_name(self, use_llm_intent: bool) -> str:
         if use_llm_intent and self.provider == "openai":
             return f"OpenAI: ({self.model})"
@@ -54,11 +79,13 @@ class IntentParserService:
         try:
             # Use OpenAI to parse the intent
             return self._parse_with_openai(query)
-        except Exception:
+        except Exception as error:
             # If OpenAI parsing fails, fall back to template-based parsing
-            print("Failed to parse intent with OpenAI, falling back to template parser.")
-            raise RuntimeError("Failed to parse intent with OpenAI and template parser.")
-        
+            print(
+                "Failed to parse intent with OpenAI; "
+                f"using template parser instead: {error}"
+            )
+            return self._parse_with_template(query)
     
     def _parse_with_template(self, query: str) -> MovieIntent:
         """
@@ -103,12 +130,13 @@ class IntentParserService:
         """
         Parse intent using OpenAI Structured Outputs.
         """
-        if self.client is None:
-            raise ValueError("OpenAI client is not initialized.")
+        # if self.client is None:
+        #     raise ValueError("OpenAI client is not initialized.")
 
         schema = self._intent_json_schema()
 
-        response = self.client.responses.create(
+        client = self._get_client()
+        response = client.responses.create(
             model=self.model, 
             input=[
                 {"role":"system",
