@@ -10,6 +10,7 @@ import type {
   UserMoviePreferenceResponse,
   UserMemorySummary,
   AgentTrace,
+  ConstraintReport,
  } from "@/types/movie";
 
 const DEMO_USER_ID = "demo_user";
@@ -27,6 +28,9 @@ export default function Home() {
   const [intentProvider, setIntentProvider] = useState<string | null>(null);
   const [retrievalQuery, setRetrievalQuery] = useState<string | null>(null);
   const [parsedIntent, setParsedIntent] = useState<MovieIntent | null>(null);
+
+  const [enforceHardConstraints, setEnforceHardConstraints] = useState(true);
+  const [constraintReport, setConstraintReport] = useState<ConstraintReport | null>(null);
 
   const [useLlmExplanations, setUseLlmExplanations] = useState(false);
   const [explanationProvider, setExplanationProvider] = useState<string | null>(
@@ -76,6 +80,7 @@ export default function Home() {
         top_k: topK,
         use_llm_explanations: useLlmExplanations,
         use_llm_intent: useLlmIntent,
+        enforce_hard_constraints: enforceHardConstraints,
         use_llm_reranker: useLlmReranker,
         include_agent_trace: includeAgentTrace,
       });
@@ -88,6 +93,7 @@ export default function Home() {
       setIntentProvider(resonse.intent_provider);
       setRetrievalQuery(resonse.retrieval_query);
       setParsedIntent(resonse.parsed_intent);
+      setConstraintReport(resonse.constraint_report);
       setExplanationProvider(resonse.explanation_provider);
       setRerankerProvider(resonse.reranker_provider);
       setRerankerFallbackUsed(resonse.reranker_fallback_used);
@@ -101,6 +107,7 @@ export default function Home() {
       setIntentProvider(null);
       setRetrievalQuery(null);
       setParsedIntent(null);
+      setConstraintReport(null);
       setExplanationProvider(null);
       setRerankerProvider(null);
       setRerankerFallbackUsed(null);
@@ -225,6 +232,7 @@ export default function Home() {
           includeWatched={includeWatched}
           useLlmExplanations={useLlmExplanations}
           useLlmIntent={useLlmIntent}
+          enforceHardConstraints={enforceHardConstraints}
           useLlmReranker={useLlmReranker}
           includeAgentTrace={includeAgentTrace}
           isLoading={isLoading}
@@ -233,6 +241,7 @@ export default function Home() {
           onIncludeWatchedChange={setIncludeWatched}
           onUseLlmExplanationsChange={setUseLlmExplanations}
           onUseLlmIntentChange={setUseLlmIntent}
+          onEnforceHardConstraintsChange={setEnforceHardConstraints}
           onUseLlmRerankerChange={setUseLlmReranker}
           onIncludeAgentTraceChange={setIncludeAgentTrace}
           onSubmit={handleRecommend}
@@ -285,6 +294,7 @@ export default function Home() {
           parsedIntent={parsedIntent}
           userId={DEMO_USER_ID}
           query={lastQuery}
+          constraintReport={constraintReport}
           onPreferenceSaved={handlePreferenceSaved}
           />
         )}

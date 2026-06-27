@@ -12,6 +12,7 @@ from app.services.recommendation_formatter import RecommendationFormatter # the 
 from app.services.reranker import MovieReranker # the service for re-ranking the recommendations (llm or local)
 from app.services.vector_store import MovieVectorStore # the ChromaDB vector store for the movies, 19985 entries
 from app.services.bounded_llm_reranker import BoundedLLMReranker # the service for re-ranking the recommendations with a bounded LLM
+from app.services.constraint_service import MovieConstraintService # the service for applying constraints to recommendations
 
 
 class MovieAgent:
@@ -33,6 +34,7 @@ class MovieAgent:
         intent_parser: IntentParserService | None = None,
         memory_service: MemoryService | None = None,
         vector_store: MovieVectorStore | None = None,
+        constraint_service: MovieConstraintService | None = None,
         explanation_service: ExplanationService | None = None,
         formatter: RecommendationFormatter | None = None,
         llm_reranker: BoundedLLMReranker | None = None,
@@ -41,6 +43,7 @@ class MovieAgent:
         self.intent_parser = intent_parser or IntentParserService()
         self.memory_service = memory_service or MemoryService()
         self.vector_store = vector_store or MovieVectorStore()
+        self.constraint_service = constraint_service or MovieConstraintService()
         self.explanation_service = explanation_service or ExplanationService()
         self.formatter = formatter or RecommendationFormatter()
         self.llm_reranker = llm_reranker or BoundedLLMReranker()
@@ -62,14 +65,26 @@ class MovieAgent:
 
         self._validate_tools(state, tracer) # validate the ChromaDB is not empty
         self._parse_intent(state, tracer)
+        self._plan_constraints(state, tracer)
         self._load_memory(db, state, tracer)
         self._retrieve_candidates(state, tracer)
+        self._enforce_constraints(state, tracer)
         self._filter_watched_candidates(state, tracer)
         self._heuristic_rerank(state, tracer)
         self._bounded_llm_rerank(state, tracer)
         self._generate_explanations(state, tracer)
 
         format_started_at = tracer.start_step()
+
+        if state.parsed_intent is None:
+            raise RuntimeError(
+                "MovieAgent completed without parsed intent."
+            )
+
+        if state.constraint_report is None:
+            raise RuntimeError(
+                "MovieAgent completed without a constraint report."
+            )
 
         recommendations = self.formatter.format_many(
             candidates=state.final_candidates, 
@@ -102,6 +117,9 @@ class MovieAgent:
             filtered_watched_count=(
                 state.filtered_watched_count
             ),
+
+            constraint_report=state.constraint_report,
+            
             explanation_provider=(
                 self.explanation_service.get_provider_name(
                     use_llm_explanation=(
@@ -209,6 +227,54 @@ class MovieAgent:
             raise
     
 
+    def _plan_constraints(
+        self,
+        state: MovieAgentState,
+        tracer: AgentTracer
+    ) -> None:
+        started_at = tracer.start_step()
+
+        try:
+            if state.parsed_intent is None:
+                raise ValueError("Parsed intent is required to plan constraints.")
+
+            state.constraint_plan = self.constraint_service.build_plan(
+                state.parsed_intent.hard_constraints
+            )
+            tracer.complete(
+                name="plan_constraints",
+                started_at=started_at,
+                details = {
+                    "enforcement_enabled": (
+                        state.request
+                        .enforce_hard_constraints
+                    ),
+                    "constraint_count": len(
+                        state.constraint_plan
+                        .descriptions
+                    ),
+                    "active": (
+                        state.constraint_plan.active
+                    ),
+                    "descriptions": (
+                        state.constraint_plan
+                        .descriptions
+                    ),
+                    "chroma_where": (
+                        state.constraint_plan
+                        .chroma_where
+                    ),
+                },
+            )
+        except Exception as error:
+            tracer.fail(
+                name="plan_constraints",
+                started_at=started_at,
+                error=error,
+            )
+            raise
+
+
     def _load_memory(
         self,
         db: Session, 
@@ -269,22 +335,55 @@ class MovieAgent:
         started_at = tracer.start_step()
 
         try:
-            candidate_k = max(state.request.top_k * self.CANDIDATE_MULTIPLIER, 
+            if state.constraint_plan is None:
+                raise ValueError("Constraint plan is required for candidate retrieval.")
+            
+            base_candidate_k = max(state.request.top_k * self.CANDIDATE_MULTIPLIER, 
                               self.MIN_CANDIDATE_POOL)
-            state.raw_candidates = self.vector_store.search(
-                query=state.retrieval_query,
-                top_k=candidate_k
+            
+            if (state.request.enforce_hard_constraints and state.constraint_plan.active):
+                candidate_k = max(
+                    base_candidate_k,
+                    100,
+                )
+
+                where = (
+                    state.constraint_plan.chroma_where
+                )
+            else:
+                candidate_k = (
+                    base_candidate_k
+                )
+                where = None
+
+            candidate_k = min(
+                candidate_k,
+                self.vector_store.count(),
+            )
+
+            state.raw_candidates = (
+                self.vector_store.search(
+                    query=state.retrieval_query,
+                    top_k=candidate_k,
+                    where=where,
+                )
             )
             tracer.complete(
                 name="retrieve_candidates",
                 started_at=started_at,
                 details={
-                    "requested_candidate_count": candidate_k,
+                    "requested_candidate_count": (
+                        candidate_k
+                    ),
                     "returned_candidate_count": len(
                         state.raw_candidates
                     ),
+                    "hard_constraint_filter_used": (
+                        where is not None
+                    ),
                     "collection": (
-                        self.vector_store.collection_name
+                        self.vector_store
+                        .collection_name
                     ),
                 },
             )
@@ -298,6 +397,101 @@ class MovieAgent:
             raise
     
 
+    def _enforce_constraints(
+        self,
+        state: MovieAgentState,
+        tracer: AgentTracer,
+    ) -> None:
+        started_at = tracer.start_step()
+
+        try:
+            if state.constraint_plan is None:
+                raise RuntimeError(
+                    "Constraint plan is missing."
+                )
+
+            if (
+                state.request.enforce_hard_constraints
+            ):
+                filter_result = (
+                    self.constraint_service
+                    .filter_candidates(
+                        candidates=state.raw_candidates,
+                        plan=state.constraint_plan,
+                    )
+                )
+            else:
+                filter_result = (
+                    self.constraint_service
+                    .passthrough_result(
+                        state.raw_candidates
+                    )
+                )
+
+            state.constrained_candidates = (
+                filter_result.candidates
+            )
+
+            state.constraint_report = (
+                self.constraint_service
+                .build_report(
+                    enabled=(
+                        state.request
+                        .enforce_hard_constraints
+                    ),
+                    plan=state.constraint_plan,
+                    retrieved_candidate_count=len(
+                        state.raw_candidates
+                    ),
+                    filter_result=filter_result,
+                    requested_top_k=(
+                        state.request.top_k
+                    ),
+                )
+            )
+
+            tracer.complete(
+                name="enforce_constraints",
+                started_at=started_at,
+                details={
+                    "enabled": (
+                        state.constraint_report.enabled
+                    ),
+                    "active": (
+                        state.constraint_report.active
+                    ),
+                    "retrieved_candidate_count": (
+                        state.constraint_report
+                        .retrieved_candidate_count
+                    ),
+                    "valid_candidate_count": (
+                        state.constraint_report
+                        .valid_candidate_count
+                    ),
+                    "post_filter_rejected_count": (
+                        state.constraint_report
+                        .post_filter_rejected_count
+                    ),
+                    "result_shortfall": (
+                        state.constraint_report
+                        .result_shortfall
+                    ),
+                    "violation_counts": (
+                        state.constraint_report
+                        .violation_counts
+                    ),
+                },
+            )
+
+        except Exception as error:
+            tracer.fail(
+                name="enforce_constraints",
+                started_at=started_at,
+                error=error,
+            )
+            raise
+
+
     def _filter_watched_candidates(
         self, 
         state: MovieAgentState,
@@ -307,7 +501,7 @@ class MovieAgent:
 
         try:
             state.filtered_candidates, state.filtered_watched_count = self.reranker.filter_watched_candidates(
-                candidates=state.raw_candidates,
+                candidates=state.constrained_candidates,
                 user_memory=state.user_memory,
                 include_watched=state.request.include_watched
             )
@@ -319,7 +513,7 @@ class MovieAgent:
             if enough_filtered_candidates:
                 state.candidates_for_reranking = state.filtered_candidates
             else:
-                state.candidates_for_reranking = state.raw_candidates
+                state.candidates_for_reranking = state.constrained_candidates
                 state.watched_filter_fallback_used = True
 
             tracer.complete(
@@ -357,6 +551,22 @@ class MovieAgent:
     ) -> None:
         started_at = tracer.start_step()
 
+        if not state.candidates_for_reranking:
+            state.heuristic_candidates = []
+
+            tracer.complete(
+                name="heuristic_rerank",
+                started_at=started_at,
+                details={
+                    "input_candidate_count": 0,
+                    "shortlist_count": 0,
+                    "reason": (
+                        "No candidates satisfied the active hard constraints."
+                    ),
+                },
+            )
+            return
+        
         try:
             # Retrieve more than final top_k here so Day 16 can let the
             # bounded LLM reranker inspect a controlled shortlist.

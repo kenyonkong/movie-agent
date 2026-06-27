@@ -88,6 +88,23 @@ def recommend_debug() -> dict:
                     .model
                 ),
             },
+            "constraint_engine": {
+                "enabled_by_default": True,
+                "supported_fields": [
+                    "director",
+                    "cast",
+                    "genres",
+                    "excluded genres",
+                    "original language",
+                    "runtime",
+                    "release year",
+                    "vote average",
+                    "vote count",
+                ],
+                "strategy": (
+                    "chroma_pushdown_plus_python_validation"
+                ),
+            },
             "bounded_llm_reranker": {
                 "provider": (
                     movie_agent.llm_reranker

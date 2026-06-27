@@ -82,6 +82,7 @@ class RecommendationFormatter:
             candidate.get("backdrop_path")
         )
 
+        
         return MovieRecommendation(
             movie_id=str(candidate.get("id")),
             title=str(

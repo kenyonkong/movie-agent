@@ -3,6 +3,7 @@ import type {
   MovieRecommendation, 
   UserMoviePreferenceResponse, 
   AgentTrace,
+  ConstraintReport,
 } from "@/types/movie";
 
 import { AgentTracePanel } from "./AgentTracePanel";
@@ -22,6 +23,7 @@ type RecommendationListProps = {
     parsedIntent: MovieIntent | null;
     userId: string;
     query: string | null;
+    constraintReport: ConstraintReport | null;
     onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
     agentTrace: AgentTrace | null;
 };
@@ -42,6 +44,7 @@ export function RecommendationList({
     parsedIntent,
     onPreferenceSaved,
     agentTrace,
+    constraintReport,
 }: RecommendationListProps) {
     if (results.length === 0) {
         return null;
@@ -185,6 +188,71 @@ export function RecommendationList({
             </summary>
             <pre className="mt-3 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-xs leading-6 text-slate-400">
               {JSON.stringify(parsedIntent, null, 2)}
+            </pre>
+          </details>
+        </section>
+      )}
+
+
+      {constraintReport?.active && (
+        <section className="mb-6 rounded-3xl border border-emerald-500/30 bg-emerald-950/20 p-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-emerald-200">
+                Exact Constraints Enforced
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-400">
+                Every returned movie passed the structured metadata checks.
+              </p>
+            </div>
+
+            <span className="w-fit rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+              {constraintReport.valid_candidate_count} valid candidates
+            </span>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {constraintReport.descriptions.map(
+              (description) => (
+                <span
+                  key={description}
+                  className="rounded-full border border-slate-700 bg-slate-950/70 px-3 py-1 text-xs text-slate-300"
+                >
+                  {description}
+                </span>
+              )
+            )}
+          </div>
+
+          {constraintReport.result_shortfall > 0 && (
+            <div className="mt-4 rounded-2xl border border-yellow-500/30 bg-yellow-950/30 p-4">
+              <p className="font-medium text-yellow-200">
+                Fewer strict matches were found
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-slate-300">
+                You requested{" "}
+                {constraintReport.requested_top_k} movies,
+                but only{" "}
+                {constraintReport.valid_candidate_count}{" "}
+                candidates satisfied every hard constraint.
+                Invalid movies were not added to fill the list.
+              </p>
+            </div>
+          )}
+
+          <details className="mt-4">
+            <summary className="cursor-pointer text-sm font-medium text-emerald-300">
+              Show constraint debug details
+            </summary>
+
+            <pre className="mt-3 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-xs leading-6 text-slate-400">
+              {JSON.stringify(
+                constraintReport,
+                null,
+                2
+              )}
             </pre>
           </details>
         </section>

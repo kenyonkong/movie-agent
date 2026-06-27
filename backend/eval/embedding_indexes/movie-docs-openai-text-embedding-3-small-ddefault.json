@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-06-20T01:38:07.165617+00:00",
+  "built_at": "2026-06-27T02:10:03.379610+00:00",
   "provider": "openai",
   "model": "text-embedding-3-small",
   "requested_dimensions": null,
@@ -7,7 +7,7 @@
   "collection_name": "movie-docs-openai-text-embedding-3-small-ddefault",
   "record_count": 19981,
   "collection_count": 19981,
-  "build_seconds": 308.81,
+  "build_seconds": 384.19,
   "openai_input_tokens": 3457128,
   "dataset_path": "D:\\Personal Project Summer 2026\\movie agent\\backend\\data\\processed\\movie_documents.jsonl"
 }

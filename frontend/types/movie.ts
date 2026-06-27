@@ -16,6 +16,25 @@ export type AgentTrace = {
   steps: AgentTraceStep[];
 };
 
+export type MovieHardConstraints = {
+  allowed_directors: string[];
+  required_cast: string[];
+
+  required_genres: string[];
+  excluded_genres: string[];
+
+  allowed_languages: string[];
+
+  min_runtime: number | null;
+  max_runtime: number | null;
+
+  min_release_year: number | null;
+  max_release_year: number | null;
+
+  min_vote_average: number | null;
+  min_vote_count: number | null;
+};
+
 export type MovieIntent = {
   raw_query: string;
   query_rewrite: string;
@@ -30,6 +49,8 @@ export type MovieIntent = {
 
   avoid: string[];
   constraints: string[];
+
+  hard_constraints: MovieHardConstraints;
 
   confidence: number;
   parser_notes: string;
@@ -83,6 +104,7 @@ export type RecommendRequest = {
     use_llm_explanations: boolean;
     use_llm_intent: boolean;
     use_llm_reranker: boolean;
+    enforce_hard_constraints: boolean;
     include_agent_trace: boolean;
 };
 
@@ -104,6 +126,7 @@ export type RecommendResponse = {
 
     results: MovieRecommendation[];
     latency_ms: number;
+    constraint_report: ConstraintReport | null;
     agent_trace: AgentTrace | null;
 };
 
@@ -147,4 +170,28 @@ export type UserMemorySummary = {
     
     liked_genres: Record<string, number>;
     disliked_genres: Record<string, number>;
+};
+
+export type ConstraintReport = {
+  enabled: boolean;
+  active: boolean;
+
+  descriptions: string[];
+
+  chroma_where: Record<
+    string,
+    unknown
+  > | null;
+
+  retrieved_candidate_count: number;
+  valid_candidate_count: number;
+  post_filter_rejected_count: number;
+
+  requested_top_k: number;
+  result_shortfall: number;
+
+  violation_counts: Record<
+    string,
+    number
+  >;
 };

@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-06-20T01:32:00.687989+00:00",
+  "built_at": "2026-06-27T01:57:35.102892+00:00",
   "provider": "local",
   "model": "sentence-transformers/all-MiniLM-L6-v2",
   "requested_dimensions": null,
@@ -7,7 +7,7 @@
   "collection_name": "movie-docs-local-sentence-transformers-all-minilm-l6-v2",
   "record_count": 19981,
   "collection_count": 19981,
-  "build_seconds": 328.58,
+  "build_seconds": 377.05,
   "openai_input_tokens": 0,
   "dataset_path": "D:\\Personal Project Summer 2026\\movie agent\\backend\\data\\processed\\movie_documents.jsonl"
 }

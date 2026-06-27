@@ -26,7 +26,7 @@ class AgentTrace(BaseModel):
     """
 
     agent_name: str = "movie_agent"
-    agent_version: str = "day15"
+    agent_version: str = "day17"
     total_duration_ms: float
     steps: list[AgentTraceStep] = Field(default_factory=list)
 
@@ -116,8 +116,8 @@ class ConstraintReport(BaseModel):
     Observable report describing hard-constraint enforcement.
     """
 
-    enabled: bool
-    active: bool
+    enabled: bool #  Is the hard-constraint feature turned on for this request/system?
+    active: bool # Did this particular request actually contain any hard constraints?
 
     descriptions: list[str] = Field(default_factory=list)
 

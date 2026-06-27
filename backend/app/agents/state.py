@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.db.schemas import MovieIntent, RecommendRequest
+from app.db.schemas import MovieIntent, RecommendRequest, ConstraintReport
+from app.services.constraint_service import ConstraintPlan
 
 @dataclass
 class MovieAgentState:
@@ -16,9 +17,11 @@ class MovieAgentState:
 
     parsed_intent: MovieIntent | None = None
     retrieval_query: str = ""
+    constraint_plan: ConstraintPlan | None = None
 
     user_memory: dict[str, Any] = field(default_factory=dict)
     raw_candidates: list[dict[str, Any]] = field(default_factory=list)
+    constrained_candidates: list[dict[str, Any]] = field(default_factory=list)
     filtered_candidates: list[dict[str, Any]] = field(default_factory=list)
     candidates_for_reranking: list[dict[str, Any]] = field(default_factory=list)
 
@@ -28,6 +31,8 @@ class MovieAgentState:
     final_candidates: list[dict[str, Any]] = field(default_factory=list)
 
     explanations: list[str] = field(default_factory=list)
+
+    constraint_report: ConstraintReport | None = None
 
     filtered_watched_count: int = 0
     watched_filter_fallback_used: bool = False

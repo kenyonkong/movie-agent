@@ -1,9 +1,74 @@
 from typing import Any
 
+import re
+import unicodedata
+
 import chromadb
 
 from app.core.config import settings
 from app.services.embedding_service import EmbeddingService
+
+
+def normalize_filter_text(
+    value: Any,
+) -> str:
+    """
+    Normalize metadata for exact matching.
+
+    Examples:
+        "Bong Joon-ho" → "bong joon ho"
+        "  Science   Fiction " → "science fiction"
+    """
+    text = unicodedata.normalize(
+        "NFKD",
+        str(value or ""),
+    )
+
+    text = "".join(
+        character
+        for character in text
+        if not unicodedata.combining(
+            character
+        )
+    )
+
+    text = text.casefold()
+
+    text = re.sub(
+        r"[^a-z0-9]+",
+        " ",
+        text,
+    )
+
+    return " ".join(
+        text.split()
+    )
+
+
+def split_metadata_values(
+    value: Any,
+) -> list[str]:
+    """
+    Convert comma-separated display metadata to normalized values.
+    """
+    normalized_values: list[str] = []
+
+    for item in str(value or "").split(","):
+        normalized = normalize_filter_text(
+            item
+        )
+
+        if (
+            normalized
+            and normalized
+            not in normalized_values
+        ):
+            normalized_values.append(
+                normalized
+            )
+
+    return normalized_values
+
 
 class MovieVectorStore:
     """
@@ -100,22 +165,41 @@ class MovieVectorStore:
     def search(
         self,
         query: str,
-        top_k: int = 5
+        top_k: int = 5,
+        where: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         if self.count() == 0:
             return []
         
         query_embedding = self.embedding_service.embed_query(query)
 
-        result = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=min(top_k, self.count()),
-            include=[
-                "documents", 
-                "metadatas", 
+        # result = self.collection.query(
+        #     query_embeddings=[query_embedding],
+        #     n_results=min(top_k, self.count()),
+        #     include=[
+        #         "documents", 
+        #         "metadatas", 
+        #         "distances",
+        #     ],
+        # )
+        query_arguments: dict[str, Any] = {
+            "query_embeddings": [
+                query_embedding
+            ],
+            "n_results": min(
+                top_k,
+                self.count(),
+            ),
+            "include": [
+                "documents",
+                "metadatas",
                 "distances",
             ],
-        )
+        }
+        if where:
+            query_arguments["where"] = where
+
+        result = self.collection.query(**query_arguments)
 
         ids = result.get("ids", [[]])[0]
         documents = result.get("documents", [[]])[0]
@@ -139,10 +223,16 @@ class MovieVectorStore:
                         "release_year",
                         -1,
                     ),
+
                     "genres": metadata.get("genres", ""),
+                    "genres_normalized": metadata.get("genres_normalized", []),
                     "keywords": metadata.get("keywords", ""),
+                    "keywords_normalized": metadata.get("keywords_normalized", []),
                     "director": metadata.get("director", ""),
+                    "directors_normalized": metadata.get("directors_normalized", []),
                     "cast": metadata.get("cast", ""),
+                    "cast_normalized": metadata.get("cast_normalized", []),
+
                     "runtime": metadata.get("runtime", 0),
                     "original_language": metadata.get(
                         "original_language",
@@ -178,35 +268,42 @@ class MovieVectorStore:
     def _build_metadata(
         self,
         record: dict[str, Any],
-    ) -> dict[str, str | int | float | bool]:
-        """
-        Structured metadata is intentionally duplicated from the
-        embedding document.
-
-        document:
-            semantic retrieval
-
-        metadata:
-            exact filters, reranking, display, evaluation,
-            and future MovieAgent tools
-        """
-        return {
+    ) -> dict[str, Any]:
+        metadata: dict[str, Any] = {
             "movie_id": int(record["movie_id"]),
-            "title": str(record.get("title") or ""),
+            "title": str(
+                record.get("title") or ""
+            ),
             "original_title": str(
                 record.get("original_title") or ""
             ),
             "release_year": int(
                 record.get("release_year") or -1
             ),
-            "genres": str(record.get("genres") or ""),
-            "keywords": str(record.get("keywords") or ""),
-            "director": str(record.get("director") or ""),
-            "cast": str(record.get("cast") or ""),
-            "runtime": int(record.get("runtime") or 0),
-            "original_language": str(
-                record.get("original_language") or ""
+
+            "genres": str(
+                record.get("genres") or ""
             ),
+            "keywords": str(
+                record.get("keywords") or ""
+            ),
+            "director": str(
+                record.get("director") or ""
+            ),
+            "cast": str(
+                record.get("cast") or ""
+            ),
+
+            "runtime": int(
+                record.get("runtime") or 0
+            ),
+            "original_language": str(
+                record.get(
+                    "original_language"
+                )
+                or ""
+            ),
+
             "popularity": float(
                 record.get("popularity") or 0.0
             ),
@@ -217,6 +314,42 @@ class MovieVectorStore:
                 record.get("vote_count") or 0
             ),
 
-            "poster_path": str(record.get("poster_path") or ""),
-            "backdrop_path": str(record.get("backdrop_path") or ""),
+            "poster_path": str(
+                record.get("poster_path") or ""
+            ),
+            "backdrop_path": str(
+                record.get("backdrop_path") or ""
+            ),
         }
+
+        normalized_arrays = {
+            "genres_normalized": (
+                split_metadata_values(
+                    record.get("genres")
+                )
+            ),
+            "keywords_normalized": (
+                split_metadata_values(
+                    record.get("keywords")
+                )
+            ),
+            "directors_normalized": (
+                split_metadata_values(
+                    record.get("director")
+                )
+            ),
+            "cast_normalized": (
+                split_metadata_values(
+                    record.get("cast")
+                )
+            ),
+        }
+
+        # Chroma should not receive empty metadata arrays.
+        for key, values in (
+            normalized_arrays.items()
+        ):
+            if values:
+                metadata[key] = values
+
+        return metadata

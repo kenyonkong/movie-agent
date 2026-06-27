@@ -4,12 +4,14 @@ type SearchBarProps = {
     includeWatched: boolean;
     useLlmExplanations: boolean;
     useLlmIntent: boolean;
+    enforceHardConstraints: boolean;
     useLlmReranker: boolean;
     includeAgentTrace: boolean;
     isLoading: boolean;
     onQueryChange: (query: string) => void;
     onTopKChange: (topK: number) => void;
     onIncludeWatchedChange: (includeWatched: boolean) => void;
+    onEnforceHardConstraintsChange: (enforceHardConstraints: boolean) => void;
     onUseLlmExplanationsChange: (useLlmExplanations: boolean) => void;
     onUseLlmIntentChange: (useLlmIntent: boolean) => void;
     onUseLlmRerankerChange: (useLlmReranker: boolean) => void;
@@ -31,12 +33,14 @@ export function SearchBar({
     includeWatched,
     useLlmExplanations,
     useLlmIntent,
+    enforceHardConstraints,
     useLlmReranker,
     includeAgentTrace,
     isLoading,
     onQueryChange,
     onTopKChange,
     onIncludeWatchedChange,
+    onEnforceHardConstraintsChange,
     onUseLlmExplanationsChange,
     onUseLlmIntentChange,
     onUseLlmRerankerChange,
@@ -106,6 +110,20 @@ export function SearchBar({
                 className="h-4 w-4 rounded border-slate-700 bg-slate-950 text-cyan-400 focus:ring-cyan-400"
               />
               Use LLM intent parser
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                checked={enforceHardConstraints}
+                onChange={(event) =>
+                  onEnforceHardConstraintsChange(
+                    event.target.checked
+                  )
+                }
+                className="h-4 w-4 rounded border-slate-700 bg-slate-950"
+              />
+
+              Enforce exact metadata constraints
             </label>
             <label className="flex items-center gap-3 text-sm text-slate-300">
               <input
