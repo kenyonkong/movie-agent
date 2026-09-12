@@ -198,9 +198,9 @@ Score meanings:
 
 Ranking formula:
 base_score =
-  0.70 * semantic_score
-+ 0.15 * preference_score
-+ 0.10 * novelty_score
+  0.90 * semantic_score
++ 0.03 * preference_score
++ 0.01 * novelty_score
 + saved_boost
 - watched_penalty
 

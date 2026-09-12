@@ -97,6 +97,10 @@ export function MovieCard({
 
                   {movie.popularity !== null &&
                     ` · Popularity: ${movie.popularity.toFixed(1)}`}
+
+                  {movie.runtime !== null &&
+                    ` · Runtime: ${movie.runtime} min`}
+
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-2">

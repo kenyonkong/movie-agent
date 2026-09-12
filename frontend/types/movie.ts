@@ -84,6 +84,7 @@ export type MovieRecommendation = {
     popularity: number | null;
     vote_average: number | null;
     vote_count: number | null;
+    runtime: number | null;
 
     // LLM reranker
     heuristic_rank: number | null;

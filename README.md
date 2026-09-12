@@ -1,126 +1,125 @@
-# Movie Agent: Agentic Movie Recommendation System
+# Movie Agent
 
-Movie Agent is a full-stack AI movie recommendation system. Users describe what they want to watch in natural language, and the system recommends movies using metadata processing, semantic search, vector retrieval, feedback memory, and personalized ranking foundations.
+Movie Agent is a full-stack, agentic movie recommendation system built with Next.js, FastAPI, ChromaDB, SQLite, and optional OpenAI reasoning. Users describe what they want to watch in natural language, and the system retrieves real catalog movies, applies explicit constraints, personalizes the ranking from feedback memory, and explains the final results.
 
-The project starts as a semantic movie recommender and is designed to evolve into an agentic recommendation system with tool-based retrieval, user preference memory, reranking, and grounded explanations.
+The key design principle is that the LLM is never an unrestricted source of movie recommendations. Retrieval, catalog metadata, deterministic validation, and fallback logic remain authoritative.
 
-## Why This Is Not Just a Chatbot
-
-A basic chatbot may directly generate movie titles from an LLM. This project instead grounds recommendations in a movie database.
-
-Current workflow:
-
-```text
-User natural-language query
-   ↓
-FastAPI recommendation endpoint
-   ↓
-Embedding model
-   ↓
-Chroma vector database
-   ↓
-Top-k movie candidates
-   ↓
-Structured recommendation response
-   ↓
-Next.js frontend
-   ↓
-User feedback
-   ↓
-SQLite preference memory
-```
-
-The LLM layer will later be used for grounded explanations and intent parsing, not for hallucinating movie recommendations.
-
-## Current Week 1 MVP
+## Current Status
 
 Implemented:
 
-- Movie metadata ingestion pipeline
+- TMDB metadata ingestion and cleaning
 - Embedding-ready movie document generation
-- Local embedding model support
-- Chroma vector database
-- Natural-language semantic movie search
-- FastAPI recommendation API
-- Next.js frontend search UI
-- SQLite user preference memory
-- Like / Dislike / Watched / Save feedback
-- One current preference state per user/movie pair
-- Memory summary over liked/disliked genres and watched/saved movies
+- Local or OpenAI embeddings
+- Persistent Chroma vector search
+- Template or OpenAI structured intent parsing
+- Hard-constraint planning and enforcement
+- SQLite feedback and preference memory
+- Watched-movie filtering with controlled fallback
+- Transparent heuristic reranking
+- Optional bounded LLM reranking over an allowlisted shortlist
+- Template or OpenAI grounded explanations
+- Sanitized per-request agent traces
+- Next.js recommendation and feedback interface
+- End-to-end evaluation across retrieval and agent configurations
 
-## Tech Stack
+Review functionality is not currently part of the active API or frontend. It is described as future work below.
 
-### Backend
+## Why This Is More Than a Chatbot
 
-- Python
-- FastAPI
-- Pydantic
-- SQLAlchemy
-- SQLite
-- ChromaDB
-- sentence-transformers
-- Optional OpenAI embedding support
-
-### Frontend
-
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
-
-### Data / AI
-
-- TMDB movie metadata
-- Metadata cleaning pipeline
-- Embedding-ready semantic movie documents
-- Dense vector search
-- User feedback memory
-
-## Architecture
+A general chatbot can generate plausible movie titles from model memory. Movie Agent instead grounds every result in the indexed catalog:
 
 ```text
-                 ┌────────────────────┐
-                 │   Next.js Frontend  │
-                 │  Search + Feedback  │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │   FastAPI Backend   │
-                 │ /recommend /feedback│
-                 └─────────┬──────────┘
-                           │
-              ┌────────────┴────────────┐
-              ▼                         ▼
-   ┌────────────────────┐    ┌────────────────────┐
-   │  Chroma Vector DB  │    │   SQLite Database   │
-   │  Movie Embeddings  │    │ User Preferences    │
-   └────────────────────┘    └────────────────────┘
-              ▲
-              │
-   ┌────────────────────┐
-   │ Movie Data Pipeline │
-   │ TMDB → Documents    │
-   └────────────────────┘
+Natural-language request
+        |
+        v
+Structured intent + hard constraints
+        |
+        v
+Chroma semantic retrieval
+        |
+        v
+Deterministic constraint validation
+        |
+        v
+SQLite preference memory
+        |
+        v
+Heuristic shortlist
+        |
+        +---- optional bounded LLM reranking
+        |
+        v
+Grounded explanations + typed API response
 ```
 
-## Memory Design
+The LLM may parse intent, reorder a finite shortlist, or explain already selected movies. It cannot introduce arbitrary movies into the response.
 
-The app stores one current preference state per user/movie pair.
+## Recommendation Pipeline
 
-Table:
+`MovieAgent` executes one explicit workflow per request:
+
+1. Validate that the configured vector collection is available.
+2. Parse the query into structured intent.
+3. Convert explicit requirements into a hard-constraint plan.
+4. Load the user's feedback memory from SQLite.
+5. Retrieve a broad semantic candidate pool from Chroma.
+6. Revalidate all active constraints in Python.
+7. Remove watched movies when possible.
+8. Score and diversify a heuristic shortlist.
+9. Optionally ask an LLM to reorder only allowlisted shortlist IDs.
+10. Generate grounded explanations for the selected results.
+11. Return a Pydantic-validated response and optional execution trace.
+
+This fixed orchestration makes tool order, latency, failures, and fallbacks observable and testable.
+
+### Hard Constraints
+
+Explicit requirements can include:
+
+- Director or cast
+- Required or excluded genres
+- Original language
+- Minimum or maximum runtime
+- Release-year range
+- Minimum vote average or vote count
+
+Constraints are pushed into Chroma metadata filtering for efficiency and then checked again in Python for correctness. When too few valid results exist, the system returns a shortfall instead of filling the response with invalid movies.
+
+### Heuristic Ranking
+
+The current deterministic score is:
 
 ```text
-user_movie_preferences
+base_score =
+    0.90 * semantic_score
+  + 0.03 * preference_score
+  + 0.01 * novelty_score
+  + saved_boost
+  - watched_penalty
+
+final_score = base_score - diversity_penalty
 ```
 
-Uniqueness rule:
+The semantic score dominates. Feedback, novelty, watched status, saved status, and genre diversity make smaller, explainable adjustments. Diversity uses greedy selection with genre Jaccard overlap.
 
-```text
-(user_id, movie_id) must be unique
-```
+### Bounded LLM Reranking
 
-State fields:
+When enabled, the LLM receives a compact heuristic shortlist, an allowlist of movie IDs, parsed intent, selected metadata, and a sanitized preference summary. Structured Outputs require a list of existing IDs and concise reasons.
+
+The backend rejects:
+
+- IDs outside the shortlist
+- Duplicate IDs
+- The wrong number of selections
+- Empty selection reasons
+- Malformed or missing structured output
+
+Any failure falls back to the deterministic heuristic order.
+
+### Feedback Memory
+
+SQLite stores one current preference state per `(user_id, movie_id)` pair:
 
 ```text
 preference: "like" | "dislike" | null
@@ -128,187 +127,213 @@ watched: boolean
 saved: boolean
 ```
 
-Behavior:
+Like and dislike are mutually exclusive. Watched and saved are independent. Repeated actions update the existing row instead of creating duplicate events, preventing repeated clicks from inflating genre counts.
 
-- Clicking Like sets `preference = "like"`.
-- Clicking Dislike sets `preference = "dislike"`.
-- Like and Dislike are mutually exclusive.
-- Clicking Watched sets `watched = true`.
-- Clicking Save sets `saved = true`.
-- Watched and Save are independent of Like/Dislike.
-- Repeated clicks update the existing row instead of creating duplicate rows.
+## Tech Stack
 
-This prevents repeated clicks on the same movie from inflating genre preference counts.
+### Backend
+
+- Python 3
+- FastAPI
+- Pydantic
+- SQLAlchemy
+- SQLite
+- ChromaDB
+- sentence-transformers
+- OpenAI Python SDK
+- pytest
+
+### Frontend
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- ESLint
+
+### Data and Evaluation
+
+- TMDB movie metadata
+- JSONL semantic documents
+- Dense-vector retrieval
+- Manually curated relevance labels and graded judgments
+- Hit@K, precision, recall, MRR, nDCG, constraint accuracy, diversity, novelty, latency, fallback, and token metrics
 
 ## Project Structure
 
 ```text
-movie-agent/
-  backend/
-    app/
-      api/
-        routes/
-          health.py
-          recommend.py
-          feedback.py
-      core/
-        config.py
-      db/
-        database.py
-        models.py
-        schemas.py
-      services/
-        embedding_service.py
-        vector_store.py
-        recommender.py
-        memory_service.py
-      scripts/
-        ingest_movies.py
-        validate_movies.py
-        build_embeddings.py
-        search_movies.py
-        evaluate_retrieval_smoke.py
-        benchmark_search.py
-        init_db.py
-        inspect_feedback.py
-  frontend/
-    app/
-      page.tsx
-    components/
-      SearchBar.tsx
-      MovieCard.tsx
-      RecommendationList.tsx
-      FeedbackButtons.tsx
-    lib/
-      api.ts
-    types/
-      movie.ts
-  docs/
-    system_design.md
-    demo_plan.md
-    resume_bullets.md
-    week1_summary.md
-    api_contract.md
+movie agent/
+├── frontend/
+│   ├── app/
+│   │   ├── page.tsx                  Main recommendation page
+│   │   ├── layout.tsx                Root layout
+│   │   └── globals.css               Global styling
+│   ├── components/
+│   │   ├── SearchBar.tsx             Query and pipeline controls
+│   │   ├── RecommendationList.tsx    Results and diagnostics
+│   │   ├── MovieCard.tsx             Movie presentation
+│   │   ├── FeedbackButtons.tsx       Like/dislike/watched/save controls
+│   │   └── AgentTracePanel.tsx       Sanitized workflow trace
+│   ├── lib/api.ts                    FastAPI client
+│   └── types/movie.ts                TypeScript API contracts
+│
+├── backend/
+│   ├── app/
+│   │   ├── main.py                   FastAPI application entry point
+│   │   ├── api/routes/
+│   │   │   ├── health.py             Health endpoint
+│   │   │   ├── recommend.py          Recommendation endpoint
+│   │   │   └── feedback.py           Feedback and memory endpoints
+│   │   ├── agents/
+│   │   │   ├── movie_agent.py        Controlled workflow orchestrator
+│   │   │   ├── state.py              Per-request pipeline state
+│   │   │   └── tracing.py            Sanitized execution trace
+│   │   ├── services/
+│   │   │   ├── intent_parser.py      Template/OpenAI intent parsing
+│   │   │   ├── constraint_service.py Chroma pushdown + Python validation
+│   │   │   ├── embedding_service.py  Local/OpenAI embeddings
+│   │   │   ├── vector_store.py       Persistent Chroma retrieval
+│   │   │   ├── memory_service.py     Preference persistence and summaries
+│   │   │   ├── reranker.py           Heuristic scoring and diversity
+│   │   │   ├── bounded_llm_reranker.py
+│   │   │   ├── explanation_service.py
+│   │   │   └── recommendation_formatter.py
+│   │   ├── db/                       SQLAlchemy models and Pydantic schemas
+│   │   ├── evaluation/               Evaluation runner and metrics
+│   │   └── scripts/                  Ingestion, indexing, search, and eval
+│   ├── data/                         Raw and processed movie data
+│   ├── chroma_db/                    Persistent vector collections
+│   ├── eval/end_to_end/              Queries, judgments, configs, reports
+│   ├── tests/                         pytest tests
+│   ├── movie_agent.db                Local SQLite database
+│   ├── requirements.txt
+│   └── .env.example
+│
+├── docs/                              Design notes and project history
+└── README.md
 ```
 
-## Setup
+## Local Setup
 
-### 1. Backend
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+### 1. Backend environment
 
 Windows PowerShell:
 
 ```powershell
 cd backend
-.venv\Scripts\Activate.ps1
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-### 2. Dataset
+The default configuration uses local embeddings, template intent parsing, template explanations, and disables LLM reranking. An OpenAI API key is only required when an OpenAI-backed feature is enabled.
 
-Place the TMDB files here:
+### 2. Prepare the catalog
+
+For CSV ingestion, place the source files at:
 
 ```text
 backend/data/raw/movies_metadata.csv
 backend/data/raw/credits.csv
 ```
 
-If using the Kaggle TMDB 5000 dataset, rename:
+Then run:
 
-```text
-tmdb_5000_movies.csv  -> movies_metadata.csv
-tmdb_5000_credits.csv -> credits.csv
-```
-
-Run ingestion:
-
-```bash
-cd backend
+```powershell
 python -m app.scripts.ingest_movies
-python -m app.scripts.validate_movies
-```
-
-### 3. Build Vector Database
-
-```bash
 python -m app.scripts.build_embeddings
 ```
 
-Test semantic search:
+The repository also contains `ingest_tmdb_api.py` for building the catalog from the TMDB API. Set `TMDB_API_READ_ACCESS_TOKEN` before using that path.
 
-```bash
-python -m app.scripts.search_movies "I want something like Her, lonely and futuristic, but not too slow"
+Test the active vector collection:
+
+```powershell
+python -m app.scripts.search_movies "a quiet emotional science-fiction movie"
 ```
 
-### 4. Initialize SQLite Database
+### 3. Initialize SQLite
 
-```bash
+```powershell
 python -m app.scripts.init_db
 ```
 
-### 5. Run Backend
+### 4. Run FastAPI
 
-```bash
-uvicorn app.main:app --reload
+```powershell
+python -m uvicorn app.main:app --reload
 ```
 
-Backend:
+- API: `http://localhost:8000`
+- Interactive docs: `http://localhost:8000/docs`
+- Debug configuration: `http://localhost:8000/recommend/debug`
 
-```text
-http://localhost:8000
-```
+### 5. Run Next.js
 
-API docs:
+In a second terminal:
 
-```text
-http://localhost:8000/docs
-```
-
-### 6. Run Frontend
-
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend:
+Open `http://localhost:3000`.
 
-```text
-http://localhost:3000
-```
+## Configuration
+
+Important backend environment variables are documented in `backend/.env.example`:
+
+| Variable | Typical values | Purpose |
+|---|---|---|
+| `EMBEDDING_PROVIDER` | `local`, `openai` | Catalog/query embedding provider |
+| `LOCAL_EMBEDDING_MODEL` | sentence-transformers model | Local embedding model |
+| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | OpenAI embedding model |
+| `INTENT_PARSER_PROVIDER` | `template`, `openai` | Query interpretation provider |
+| `EXPLANATION_PROVIDER` | `template`, `openai` | Explanation provider |
+| `LLM_RERANKER_PROVIDER` | `disabled`, `openai` | Optional bounded reranker |
+| `LLM_RERANKER_SHORTLIST_SIZE` | `15` | Maximum heuristic shortlist exposed to the LLM |
+| `CHROMA_COLLECTION_NAME` | optional override | Explicit vector collection |
+| `DATABASE_URL` | SQLAlchemy URL | Preference database connection |
+
+Changing the embedding model requires a compatible Chroma collection built with that model.
 
 ## API Overview
 
-### Recommendation
+### Health
+
+```http
+GET /health
+```
+
+### Recommend movies
 
 ```http
 POST /recommend
 ```
 
-Example request:
-
 ```json
 {
   "user_id": "demo_user",
-  "query": "I want something like Her, lonely and futuristic, but not too slow",
-  "top_k": 5
+  "query": "A thoughtful science-fiction romance like Her, but under two hours",
+  "top_k": 5,
+  "include_watched": false,
+  "use_llm_intent": true,
+  "enforce_hard_constraints": true,
+  "use_llm_reranker": false,
+  "use_llm_explanations": false,
+  "include_agent_trace": true
 }
 ```
 
-### Feedback
+The response includes parsed intent, the retrieval query, a constraint report, ranking signals, provider/fallback information, recommendations, latency, and an optional trace.
+
+### Save feedback
 
 ```http
-POST /feedback
+POST /feedback/
 ```
-
-Example request:
 
 ```json
 {
@@ -316,86 +341,182 @@ Example request:
   "movie_id": "152601",
   "title": "Her",
   "action": "like",
-  "query": "lonely futuristic romance like Her",
+  "query": "thoughtful futuristic romance",
   "genres": "Romance, Science Fiction, Drama",
   "score": 0.82
 }
 ```
 
-### Memory Summary
+Supported actions are like, dislike, watched, and save.
+
+### Read feedback memory
 
 ```http
+GET /feedback/{user_id}
 GET /feedback/{user_id}/summary
 ```
 
-## Example Queries
+## Evaluation
 
-```text
-I want something like Her, lonely and futuristic, but not too slow
-A dark psychological thriller with obsession and mystery
-A funny comfort movie about friendship and family
-An epic fantasy adventure with battles and magical worlds
-A quiet emotional sci-fi movie about memory and identity
+The end-to-end harness compares raw retrieval, intent-enhanced retrieval, heuristic agent ranking, and bounded LLM ranking over the same query set and catalog.
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.scripts.run_evaluation
 ```
 
-## Screenshots
+Run one configuration:
 
-Screenshots will be added after the Week 1 UI checkpoint.
+```powershell
+.\.venv\Scripts\python.exe -m app.scripts.run_evaluation `
+  --config openai_agent_llm
+```
 
-Planned screenshots:
+Recorded Day 17 results:
 
-- Search page
-- Recommendation results
-- Feedback buttons
-- User memory summary
-- FastAPI docs
+| Configuration | Hit@5 | nDCG@5 | Constraint accuracy | P50 latency |
+|---|---:|---:|---:|---:|
+| Local raw retrieval | 0.500 | 0.3528 | 0.4778 | 12.70 ms |
+| OpenAI raw retrieval | 0.625 | 0.5827 | 0.8500 | 222.53 ms |
+| OpenAI intent retrieval | 0.625 | 0.5247 | 0.8055 | 1642.01 ms |
+| Agent heuristic | 0.500 | 0.5309 | 0.8055 | 1539.34 ms |
+| Agent bounded LLM | **0.750** | **0.7653** | **0.9556** | 4280.91 ms |
+
+These results come from an eight-query development benchmark with curated labels. They demonstrate the evaluation pipeline and quality/latency tradeoff; they are not production-scale statistical claims.
+
+## Development Checks
+
+Backend tests:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m pytest tests -q
+```
+
+Frontend checks:
+
+```powershell
+cd frontend
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+Known development cleanup:
+
+- The MovieAgent unit-test fake needs to accept the vector store's newer `where` argument.
+- `FeedbackButtons.tsx` currently triggers the React `set-state-in-effect` lint rule.
+- The OpenAI explanation prompt contains an older scoring-weight description and should be synchronized with the current heuristic formula.
+- The conservative template intent parser's language-pattern matching should use regex search rather than literal substring matching.
 
 ## Current Limitations
 
-- Recommendations currently use semantic similarity only.
-- User memory is stored but not yet used for reranking.
-- Explanations are currently simple template-based explanations.
-- No authentication or multi-user login yet.
-- Local SQLite is used for MVP development.
-- Evaluation metrics are currently smoke tests and latency benchmarks.
+- No authentication or account management; `demo_user` is the default identity.
+- SQLite is appropriate for the local MVP but not the intended multi-instance production database.
+- Heuristic weights are manually tuned rather than learned from interaction data.
+- OpenAI intent parsing, reranking, and explanations add latency and usage cost.
+- Template intent parsing intentionally recognizes only a limited set of explicit phrases.
+- Evaluation uses a small, manually curated development set.
+- Review creation, editing, publishing, and display are not active features.
 
-## Roadmap
+## Future Direction: Movie Reviews
 
-Next steps:
+Review functionality should be introduced as a separate, user-authored content workflow rather than mixed directly into feedback buttons. Like, dislike, watched, and saved are lightweight ranking signals; a review is richer content with its own lifecycle, validation, and privacy concerns.
 
-- Memory-based reranking
-- Watched movie filtering or penalty
-- Genre preference boosts and penalties
-- Diversity and novelty scoring
-- LLM-grounded explanations
-- Evaluation dashboard
-- Demo video and screenshots
-- Optional deployment
-- PostgreSQL or pgvector migration
+### Proposed data model
+
+Create a `movie_reviews` table with one review per user/movie pair for the first version:
+
+```text
+id
+user_id
+movie_id
+movie_title_snapshot
+rating                 optional numeric rating
+headline               optional short title
+body                    review text
+contains_spoilers       boolean
+status                  draft | published
+created_at
+updated_at
+
+UNIQUE(user_id, movie_id)
+```
+
+The catalog remains authoritative for movie metadata. Only a title snapshot should be stored with the review for display/history resilience.
+
+### Proposed backend design
+
+Add review schemas, a `ReviewService`, and an independently registered router:
+
+```http
+POST   /reviews
+GET    /reviews/{review_id}
+GET    /reviews/user/{user_id}
+GET    /reviews/movie/{movie_id}
+PATCH  /reviews/{review_id}
+DELETE /reviews/{review_id}
+```
+
+The service should:
+
+- Validate the movie ID against the local catalog.
+- Enforce rating and text-length limits with Pydantic.
+- Keep draft and published states explicit.
+- Confirm review ownership before update or deletion once authentication exists.
+- Use database migrations rather than relying only on startup table creation.
+- Return typed response schemas without leaking internal database objects.
+
+### Proposed frontend design
+
+Add a review editor reachable from a movie card or movie detail view:
+
+- Rating input, headline, body, and spoiler flag
+- Save draft, publish, edit, and delete actions
+- User review history
+- Movie-level review list with spoiler text hidden by default
+- Clear separation between private preference actions and published review content
+
+### Recommendation integration
+
+The first review release should not place raw review text directly into recommendation prompts. A safer progression is:
+
+1. Ship review CRUD independently of ranking.
+2. Derive explicit rating/sentiment signals only from the user's own published reviews.
+3. Add those signals to the existing memory summary with transparent weights.
+4. Evaluate relevance and personalization changes before enabling them by default.
+5. If semantic review search is later needed, index reviews in a separate Chroma collection so catalog retrieval and user-generated content remain isolated.
+
+This preserves the existing guarantee that every recommended movie comes from the catalog and prevents untrusted review text from acting as instructions to an LLM.
+
+### Quality and safety work
+
+Before reviews become public or multi-user, add:
+
+- Authentication and authorization
+- Input sanitization and output escaping
+- Spoiler handling
+- Rate limiting
+- Abuse reporting and moderation states
+- Pagination and sorting
+- Unit, API, permission, and frontend interaction tests
+- Review-specific evaluation for usefulness, toxicity, and prompt-injection resistance
+
+## Broader Roadmap
+
+- Fix the current test, lint, parser, and explanation-prompt inconsistencies
+- Add automated API integration tests
+- Add authentication and persistent user profiles
+- Build the review workflow described above
+- Expand human relevance judgments and repeat LLM evaluations
+- Tune heuristic weights or evaluate a learned-to-rank model
+- Cache safe model outputs and reduce LLM latency
+- Add screenshots and a short demo video
+- Deploy the frontend, API, database, and vector store
+- Evaluate PostgreSQL/pgvector for production persistence
 
 ## Resume Summary
 
-Built a full-stack AI movie recommendation system using FastAPI, Next.js, Chroma, SQLAlchemy, and dense embeddings. The system processes movie metadata into embedding-ready documents, retrieves movies from natural-language queries, and stores one current user preference state per user/movie pair for future personalized reranking.
+Built a full-stack agentic movie recommendation system using Next.js, FastAPI, ChromaDB, SQLAlchemy, SQLite, dense embeddings, and optional OpenAI Structured Outputs. The system converts natural-language requests into semantic intent and deterministic constraints, retrieves catalog-grounded candidates, personalizes and diversifies results from feedback memory, safely bounds LLM reranking to allowlisted movie IDs, and evaluates relevance, constraint adherence, diversity, latency, fallbacks, and token usage.
 
-
-## MovieAgent Orchestration
-
-The MovieAgent is a controlled workflow orchestrator rather than an
-unrestricted autonomous LLM agent.
-
-Its responsibilities are:
-
-1. Interpret the request through the intent parser.
-2. Load the user's recommendation memory.
-3. Retrieve candidates from the configured vector index.
-4. Apply watched filtering and fallback rules.
-5. Produce a heuristic shortlist.
-6. Optionally pass that shortlist to a bounded LLM reranker.
-7. Generate grounded explanations.
-8. Return a validated response and sanitized trace.
-
-The MovieAgent does not own the implementation details of retrieval,
-memory, ranking, or explanation. Those remain separate injectable tools.
-
-This separation improves testability and allows individual tools to be
-upgraded without rewriting the orchestration layer.
+On an eight-query development benchmark, the complete bounded-LLM configuration achieved 75% Hit@5, 0.7653 nDCG@5, and 95.56% individual constraint-check accuracy, with the expected latency and token-cost tradeoff.

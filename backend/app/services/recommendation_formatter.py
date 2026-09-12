@@ -141,6 +141,9 @@ class RecommendationFormatter:
             vote_count=self._safe_int(
                 candidate.get("vote_count")
             ),
+            runtime=self._safe_int(
+                candidate.get("runtime")
+            ),
             
             # LLM ranking data
             heuristic_rank=self._safe_int(

@@ -260,6 +260,7 @@ class MovieRecommendation(BaseModel):
     popularity: float | None = None
     vote_average: float | None = None
     vote_count: int | None = None
+    runtime: int | None = None
 
     # Rank using openAI
     heuristic_rank: int | None = None
