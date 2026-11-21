@@ -397,17 +397,11 @@ Frontend checks:
 
 ```powershell
 cd frontend
-npx tsc --noEmit
-npm run lint
-npm run build
+npm run check
 ```
 
-Known development cleanup:
-
-- The MovieAgent unit-test fake needs to accept the vector store's newer `where` argument.
-- `FeedbackButtons.tsx` currently triggers the React `set-state-in-effect` lint rule.
-- The OpenAI explanation prompt contains an older scoring-weight description and should be synchronized with the current heuristic formula.
-- The conservative template intent parser's language-pattern matching should use regex search rather than literal substring matching.
+GitHub Actions runs the backend test suite plus frontend type checking,
+linting, and production build for every push and pull request.
 
 ## Current Limitations
 
@@ -504,7 +498,6 @@ Before reviews become public or multi-user, add:
 
 ## Broader Roadmap
 
-- Fix the current test, lint, parser, and explanation-prompt inconsistencies
 - Add automated API integration tests
 - Add authentication and persistent user profiles
 - Build the review workflow described above

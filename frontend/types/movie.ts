@@ -117,7 +117,7 @@ export type RecommendResponse = {
     intent_provider: string;
 
     top_k: number;
-    included_watched: boolean;
+    include_watched: boolean;
     candidate_count: number;
     filtered_watched_count: number;
     explanation_provider: string;

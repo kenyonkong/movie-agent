@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
 venv/
 .env
@@ -16,6 +17,11 @@ backend/.env
 node_modules/
 .next/
 out/
+*.tsbuildinfo
+
+# Local generated work
+output/
+tmp/
 
 # OS
 .DS_Store

@@ -80,12 +80,14 @@ class FakeVectorStore:
         self,
         query: str,
         top_k: int,
+        where: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         self.calls.append("retrieve")
 
         assert query == (
             "rewritten emotional science fiction"
         )
+        assert where is None
 
         return [
             {
@@ -298,8 +300,10 @@ def test_movie_agent_coordinates_tools_in_order() -> None:
     assert trace_names == [
         "validate_tools",
         "parse_intent",
+        "plan_constraints",
         "load_user_memory",
         "retrieve_candidates",
+        "enforce_constraints",
         "filter_watched_candidates",
         "heuristic_rerank",
         "bounded_llm_rerank",

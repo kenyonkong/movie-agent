@@ -143,7 +143,7 @@ class MemoryService:
 
         return UserMemorySummary(
             user_id=user_id,
-            total_feedback=len(preference_items),
+            total_preferences=len(preference_items),
             liked_movies=liked_movies[:10],
             disliked_movies=disliked_movies[:10],
             watched_movies=watched_movies[:10],
@@ -255,5 +255,3 @@ class MemoryService:
             "liked_movie_ids": list(liked_movie_ids),
             "disliked_movie_ids": list(disliked_movie_ids),
         }
-
-        

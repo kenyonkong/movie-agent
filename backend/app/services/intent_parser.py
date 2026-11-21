@@ -203,7 +203,7 @@ class IntentParserService:
         for phrase, language_code in (
             language_phrases.items()
         ):
-            if phrase in lower_query:
+            if re.search(phrase, lower_query):
                 hard.allowed_languages.append(
                     language_code
                 )

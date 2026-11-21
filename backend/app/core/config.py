@@ -75,9 +75,6 @@ class Settings(BaseModel):
     )
     chroma_collection_name: str | None = os.getenv("CHROMA_COLLECTION_NAME") or None
 
-    # Ingestion settings
-    embedding_batch_size: int = int(os.getenv("EMBEDDING_BATCH_SIZE", 32))
-
     # SQLite database path
     sqlite_db_path: Path = backend_dir / "movie_agent.db"
     database_url: str = os.getenv(

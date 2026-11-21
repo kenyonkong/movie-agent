@@ -7,7 +7,7 @@ type MovieCardProps = {
     rank: number;
     userId: string;
     query: string | null;
-    onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
+    onPreferenceSaved: (feedback: UserMoviePreferenceResponse) => void;
 };
 
 function formatScore(score: number): string {

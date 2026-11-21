@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { sendFeedback } from "@/lib/api";
 import type {
     FeedbackAction,
     MovieRecommendation,
-    PreferenceValue,
     UserMoviePreferenceResponse,
 } from "@/types/movie";
 
@@ -13,7 +12,7 @@ type FeedbackButtonsProps = {
     movie: MovieRecommendation;
     userId: string;
     query: string | null;
-    onFeedbackSaved?: (feedback: UserMoviePreferenceResponse) => void;
+    onFeedbackSaved: (feedback: UserMoviePreferenceResponse) => void;
 };
 
 const ACTIONS: {
@@ -34,26 +33,8 @@ export function FeedbackButtons({
 }: FeedbackButtonsProps) {
     const [pendingAction, setPendingAction] = useState<FeedbackAction | null>(null);
 
-    const [preference, setPreference] = useState<PreferenceValue | null>(movie.preference);
-    const [watched, setWatched] = useState(movie.watched);
-    const [saved, setSaved] = useState(movie.saved);
-
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-
-    /*
-    * Important:
-    * When the user searches again, React creates/reuses MovieCard components
-    * with new movie props. We need to sync local button state from the backend
-    * state included in the recommendation response.
-    */
-    useEffect(() => {
-      setPreference(movie.preference);
-      setWatched(movie.watched);
-      setSaved(movie.saved);
-      setStatusMessage(null);
-      setError(null);
-    }, [movie.movie_id, movie.preference, movie.watched, movie.saved]);
 
     async function handleFeedback(action: FeedbackAction) {
         try {
@@ -71,17 +52,13 @@ export function FeedbackButtons({
                 score: movie.score,
             });
 
-            setPreference(response.preference);
-            setWatched(response.watched);
-            setSaved(response.saved);
-
             setStatusMessage(
               `Saved state: preference=${response.preference ?? "none"}, watched=${
                 response.watched
               }, saved=${response.saved}`
             );
 
-            onFeedbackSaved?.(response);
+            onFeedbackSaved(response);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to save feedback");
         } finally {
@@ -91,19 +68,19 @@ export function FeedbackButtons({
 
     function isActionActive(action: FeedbackAction): boolean {
       if (action === "like") {
-        return preference === "like";
+        return movie.preference === "like";
       }
 
       if (action === "dislike") {
-        return preference === "dislike";
+        return movie.preference === "dislike";
       }
 
       if (action === "watched") {
-        return watched;
+        return movie.watched;
       }
 
       if (action === "save") {
-        return saved;
+        return movie.saved;
       }
 
       return false;

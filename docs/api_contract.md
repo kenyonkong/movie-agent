@@ -1,26 +1,21 @@
 # API Contract
 
+The FastAPI application serves JSON at `http://localhost:8000` by default.
+Interactive OpenAPI documentation is available at `/docs`.
+
 ## Health
 
 ```http
 GET /health
 ```
 
-Example response:
+Returns application status, name, version, and environment.
 
-```json
-{
-  "status": "ok",
-  "app_name": "Movie Agent API",
-  "version": "0.1.0",
-  "environment": "development"
-}
-```
-
-## Recommend Movies
+## Recommend movies
 
 ```http
 POST /recommend
+Content-Type: application/json
 ```
 
 Example request:
@@ -28,68 +23,40 @@ Example request:
 ```json
 {
   "user_id": "demo_user",
-  "query": "I want something like Her, lonely and futuristic, but not too slow",
+  "query": "A Korean-language thriller after 2000 under two hours",
   "top_k": 5,
   "include_watched": false,
-  "use_llm_explanations": true
+  "use_llm_intent": false,
+  "enforce_hard_constraints": true,
+  "use_llm_reranker": false,
+  "use_llm_explanations": false,
+  "include_agent_trace": true
 }
 ```
 
-Example response:
+`top_k` must be between 1 and 10. The query must contain 2–500 characters.
+LLM flags only use OpenAI when the matching backend provider is configured;
+otherwise the deterministic implementation or fallback is used.
 
-```json
-{
-  "user_id": "demo_user",
-  "query": "I want something like Her, lonely and futuristic, but not too slow",
-  "top_k": 5,
-  "include_watched": false,
-  "candidate_count": 50,
-  "filtered_watched_count": 1,
-  "explanation_provider": "openai:gpt-5.4-mini",
-  "results": [
-    {
-      "movie_id": "123",
-      "title": "After Yang",
-      "release_year": 2021,
-      "genres": "Science Fiction, Drama",
-      "score": 0.52,
-      "distance": 0.96,
-      "semantic_score": 0.51,
-      "preference_score": 0.33,
-      "preference": null,
-      "watched": false,
-      "saved": false,
-      "reason": "After Yang was retrieved because...",
-      "document_preview": "Title: After Yang...",
-      "ranking_signals": {
-        "semantic_score": 0.51,
-        "preference_score": 0.33,
-        "saved_boost": 0.0,
-        "watched_penalty": 0.0,
-        "final_score": 0.52,
-        "preference": "none",
-        "watched": false,
-        "saved": false
-      }
-    }
-  ],
-  "latency_ms": 130.2
-}
-```
+The response contains:
 
-## Save Feedback
+- Original and retrieval queries
+- Parsed structured intent and intent provider
+- Constraint-enforcement report
+- Candidate and watched-filter counts
+- Reranker and explanation provider information
+- Ranked movie results with metadata, images, scores, reasons, and signals
+- Total latency and an optional sanitized agent trace
+
+The response field is named `include_watched`, matching the request contract.
+When exact constraints leave fewer than `top_k` valid movies, `results` is
+shorter and `constraint_report.result_shortfall` explains the difference.
+
+## Save feedback
 
 ```http
-POST /feedback
-```
-
-Allowed actions:
-
-```text
-like
-dislike
-watched
-save
+POST /feedback/
+Content-Type: application/json
 ```
 
 Example request:
@@ -100,65 +67,25 @@ Example request:
   "movie_id": "152601",
   "title": "Her",
   "action": "like",
-  "query": "lonely futuristic romance like Her",
+  "query": "thoughtful futuristic romance",
   "genres": "Romance, Science Fiction, Drama",
   "score": 0.82
 }
 ```
 
-Example response:
+`action` is one of `like`, `dislike`, `watched`, or `save`. Like and dislike
+replace the single preference value; watched and saved are independent flags.
+The endpoint upserts one current row per user/movie pair.
 
-```json
-{
-  "id": 1,
-  "user_id": "demo_user",
-  "movie_id": "152601",
-  "title": "Her",
-  "query": "lonely futuristic romance like Her",
-  "genres": "Romance, Science Fiction, Drama",
-  "score": 0.82,
-  "preference": "like",
-  "watched": false,
-  "saved": false,
-  "created_at": "2026-06-03T00:00:00",
-  "updated_at": "2026-06-03T00:00:00"
-}
-```
-
-## Get User Preferences
+## Read preference state
 
 ```http
-GET /feedback/{user_id}
-```
-
-Example response:
-
-```json
-[
-  {
-    "id": 1,
-    "user_id": "demo_user",
-    "movie_id": "152601",
-    "title": "Her",
-    "query": "lonely futuristic romance like Her",
-    "genres": "Romance, Science Fiction, Drama",
-    "score": 0.82,
-    "preference": "like",
-    "watched": true,
-    "saved": true,
-    "created_at": "2026-06-03T00:00:00",
-    "updated_at": "2026-06-03T00:00:00"
-  }
-]
-```
-
-## Get Memory Summary
-
-```http
+GET /feedback/{user_id}?limit=10
 GET /feedback/{user_id}/summary
 ```
 
-Example response:
+The first endpoint returns recently updated preference states. The summary
+returns this shape:
 
 ```json
 {
@@ -166,8 +93,8 @@ Example response:
   "total_preferences": 1,
   "liked_movies": ["Her"],
   "disliked_movies": [],
-  "watched_movies": ["Her"],
-  "saved_movies": ["Her"],
+  "watched_movies": [],
+  "saved_movies": [],
   "liked_genres": {
     "Romance": 1,
     "Science Fiction": 1,
@@ -177,12 +104,12 @@ Example response:
 }
 ```
 
-## Memory Design
+## Debug configuration
 
-The backend stores one current preference state per user/movie pair.
+```http
+GET /recommend/debug
+```
 
-Like and Dislike are mutually exclusive through a single `preference` field.
-
-Watched and Saved are independent boolean flags.
-
-Repeated clicks update the existing row instead of creating duplicate rows.
+Returns the active vector collection, embedding configuration, intent parser,
+constraint strategy, bounded reranker, and explanation provider. This endpoint
+is intended for local development and should not expose secrets.

@@ -327,7 +327,7 @@ class UserMoviePreferenceResponse(BaseModel):
 
 class UserMemorySummary(BaseModel):
     user_id: str
-    total_feedback: int
+    total_preferences: int
     liked_movies: list[str]
     disliked_movies: list[str]
     watched_movies: list[str]

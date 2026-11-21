@@ -2,7 +2,7 @@
 
 ## Goal
 
-Show that Movie Agent is a full-stack AI recommendation system, not a basic chatbot.
+Show that Movie Agent is a catalog-grounded recommendation agent, not a basic chatbot.
 
 The demo should show:
 
@@ -10,8 +10,9 @@ The demo should show:
 2. Semantic recommendations
 3. Recommendation metadata
 4. Feedback buttons
-5. Fixed user memory design
-6. Memory summary update
+5. Exact constraint enforcement
+6. Optional bounded LLM reranking
+7. User memory and execution tracing
 
 ## Demo Setup
 
@@ -104,7 +105,7 @@ Run:
 
 ```bash
 cd backend
-python -m app.scripts.inspect_feedback
+python -m app.scripts.local_test.inspect_feedback
 ```
 
 Expected result:
@@ -123,4 +124,7 @@ saved=True
 - Feedback is stored as current preference state, not raw click events.
 - Like/dislike are mutually exclusive.
 - Watched/saved are independent.
-- The next stage will use memory for personalized reranking.
+- User memory already influences heuristic reranking.
+- Explicit metadata constraints are enforced after retrieval.
+- The optional LLM reranker can only select allowlisted catalog IDs.
+- The execution trace exposes pipeline steps, latency, and fallbacks.

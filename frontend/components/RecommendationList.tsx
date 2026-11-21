@@ -24,7 +24,7 @@ type RecommendationListProps = {
     userId: string;
     query: string | null;
     constraintReport: ConstraintReport | null;
-    onPreferenceSaved?: (feedback: UserMoviePreferenceResponse) => void;
+    onPreferenceSaved: (feedback: UserMoviePreferenceResponse) => void;
     agentTrace: AgentTrace | null;
 };
 

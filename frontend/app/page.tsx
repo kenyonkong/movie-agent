@@ -167,7 +167,7 @@ export default function Home() {
                 </p>
               </div>
               <p className="rounded-full border border-slate-700 px-3 py-2 text-sm text-slate-300">
-                {memorySummary.total_preferences} movie preferences states
+                {memorySummary.total_preferences} movie preference states
               </p>
             </div>
 

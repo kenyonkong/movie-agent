@@ -2,226 +2,104 @@
 
 ## Overview
 
-Movie Agent is a full-stack AI movie recommendation system for natural-language movie discovery.
+Movie Agent is a full-stack, catalog-grounded recommendation system. It
+combines semantic retrieval, deterministic constraints, explicit preference
+memory, transparent ranking, optional bounded LLM reasoning, and evaluation.
 
-Instead of asking an LLM to invent movie titles directly, the system grounds recommendations in a real movie metadata dataset. The current Week 1 MVP supports semantic retrieval, a FastAPI recommendation API, a Next.js frontend, and persistent user preference memory.
+The catalog and deterministic validators remain authoritative. LLMs may parse
+intent, reorder an allowlisted shortlist, or explain selected movies; they may
+not introduce arbitrary recommendations.
 
-## Architecture
-
-```text
-User
-  ↓
-Next.js Frontend
-  ↓
-FastAPI Backend
-  ↓
-Recommendation Service
-  ↓
-Embedding Service
-  ↓
-Chroma Vector Store
-  ↓
-Movie Candidates
-  ↓
-Recommendation Response
-  ↓
-User Feedback
-  ↓
-SQLite Preference Memory
-```
-
-## Main Components
-
-## Dataset Upgrade
-
-The recommendation system depends heavily on retrieval quality. If the dataset is small or metadata is weak, LLM intent parsing and agentic orchestration cannot fully compensate.
-
-Day 13 upgrades the dataset from the original MVP-scale movie dataset to a larger TMDB-based dataset.
-
-The new ingestion pipeline:
-
-1. Downloads TMDB movie ID exports.
-2. Filters candidate IDs by adult/video flags and popularity.
-3. Fetches movie details through the TMDB API.
-4. Appends credits and keywords.
-5. Filters invalid or low-quality records.
-6. Deduplicates movies.
-7. Builds richer embedding documents.
-8. Rebuilds the Chroma vector store.
-
-This keeps the MovieAgent grounded in a stronger retrieval layer.
-
-### 1. Data Processing Pipeline
-
-Raw TMDB movie data is cleaned and transformed into structured movie records.
-
-Inputs:
+## Request flow
 
 ```text
-backend/data/raw/movies_metadata.csv
-backend/data/raw/credits.csv
+Next.js UI
+  -> FastAPI recommendation endpoint
+  -> structured intent and hard-constraint plan
+  -> Chroma semantic retrieval with metadata pushdown
+  -> deterministic Python constraint validation
+  -> SQLite preference-memory lookup
+  -> watched filtering and heuristic reranking
+  -> optional bounded LLM reranking
+  -> grounded explanations and typed response
 ```
 
-Outputs:
+`MovieAgent` owns this fixed orchestration order. A per-request state object
+holds intermediate values, while the tracer records sanitized step status,
+duration, counts, providers, and fallback information.
+
+## Catalog and retrieval
+
+The TMDB ingestion pipeline downloads candidate IDs, retrieves movie details,
+credits, and keywords, removes invalid or low-quality records, deduplicates the
+catalog, and writes CSV plus JSONL semantic documents.
+
+The embedding layer supports local SentenceTransformers and OpenAI embeddings.
+Each provider/model configuration receives a separate persistent Chroma
+collection. Movie metadata is stored alongside vectors so eligible constraints
+can be pushed into retrieval.
+
+## Intent and exact constraints
+
+Intent parsing supports a conservative template parser and optional OpenAI
+Structured Outputs. The result separates soft preferences from enforceable
+hard constraints.
+
+Supported hard constraints include director, cast, required and excluded
+genres, original language, runtime, release year, vote average, and vote count.
+Chroma filtering narrows the search, but Python validation is the final
+authority. The response reports rejected candidates and returns a short list
+rather than filling it with invalid movies.
+
+## Preference memory and ranking
+
+SQLite stores one current state per `(user_id, movie_id)` pair:
 
 ```text
-backend/data/processed/movies_clean.csv
-backend/data/processed/movie_documents.jsonl
-```
-
-Each movie is converted into an embedding-ready document containing title, release year, genres, overview, tagline, keywords, main cast, director, runtime, average rating, and popularity.
-
-This gives the embedding model richer semantic context than just the movie title.
-
-### 2. Embedding Service
-
-The embedding layer converts movie documents and user queries into dense vectors.
-
-The code supports:
-
-- Local sentence-transformers embeddings
-- Optional OpenAI embeddings
-
-This abstraction allows the project to switch embedding providers without changing the recommender logic.
-
-### 3. Vector Store
-
-Chroma stores movie document embeddings.
-
-Each stored item contains:
-
-```text
-id
-document
-metadata
-embedding
-```
-
-At query time, the backend embeds the user's natural-language query and retrieves the nearest movie document vectors.
-
-### 4. Recommendation API
-
-The FastAPI backend exposes:
-
-```http
-POST /recommend
-```
-
-The endpoint accepts:
-
-```text
-user_id
-query
-top_k
-```
-
-It returns ranked movie recommendations with metadata, retrieval score, vector distance, document preview, explanation, and latency.
-
-### 5. Feedback and Memory
-
-The app stores one current preference state per user/movie pair.
-
-Table:
-
-```text
-user_movie_preferences
-```
-
-Unique constraint:
-
-```text
-(user_id, movie_id)
-```
-
-State fields:
-
-```text
-preference: "like" | "dislike" | null
+preference: like | dislike | null
 watched: boolean
 saved: boolean
 ```
 
-This avoids duplicate feedback rows and prevents repeated clicks from inflating genre counts.
+The design is intentionally state-based rather than an append-only click log,
+so repeated actions do not inflate preference counts.
 
-## Diversity and Novelty
+The heuristic score is dominated by semantic relevance, with smaller genre
+preference and novelty signals, a saved boost, a watched penalty, and greedy
+genre-diversity selection. Every returned recommendation exposes its ranking
+signals.
 
-The Day 10 reranker adds two recommendation-quality signals.
+## Optional LLM stages
 
-### Novelty
+OpenAI-backed intent parsing, reranking, and explanations are independently
+configurable. The bounded reranker receives only a heuristic shortlist and must
+return existing movie IDs. Invalid IDs, duplicates, wrong selection counts,
+empty reasons, missing output, or provider failures trigger deterministic
+fallback.
 
-Novelty is a small boost for less obvious movies. It is estimated from movie popularity and vote count.
+Explanations are generated only after selection. Both template and OpenAI
+explanations use retrieved metadata and ranking signals rather than model
+memory.
 
-The goal is not to recommend obscure movies blindly, but to slightly prefer less obvious candidates when relevance is similar.
+## Evaluation
 
-### Diversity
+The evaluation harness compares raw retrieval, intent-enhanced retrieval,
+heuristic agent ranking, and bounded LLM ranking over common query and judgment
+sets. It records relevance, ranking, constraint accuracy, diversity, novelty,
+latency, token use, and fallback metrics.
 
-Diversity is applied during final top-k selection.
+## Current deployment boundaries
 
-The reranker greedily selects one movie at a time. For each remaining candidate, it computes a genre-overlap penalty against movies already selected.
+- `demo_user` is a development identity; authentication is not implemented.
+- SQLite and local Chroma are suitable for the local application, not a
+  multi-instance production deployment.
+- Database tables are created at startup; schema migrations are future work.
+- OpenAI stages add latency and usage cost and remain optional.
+- The evaluation set is a small development benchmark.
 
-This reduces repetitive recommendation lists where every result belongs to the same genre cluster.
+## Review redesign boundary
 
-### Why This Matters
-
-Pure semantic retrieval often returns many near-duplicates. A recommendation system should provide a useful set of options, not only the nearest vectors.
-
-## Why Current Preference State Instead of Event Log?
-
-An event-log design would store every click:
-
-```text
-Like Her
-Like Her
-Like Her
-```
-
-That is useful for analytics, but it caused a problem for this MVP: repeated clicks on the same movie inflated genre counts.
-
-The fixed design stores one current state:
-
-```text
-Her -> preference = like, watched = false, saved = false
-```
-
-Repeated clicks update the same row instead of creating duplicates.
-
-## Tradeoffs
-
-### SQLite vs PostgreSQL
-
-SQLite was chosen for local development because it is simple and requires no separate database server.
-
-PostgreSQL would be better for production deployment, concurrent writes, and scalability.
-
-### Chroma vs FAISS vs pgvector
-
-Chroma was chosen for fast local development and persistent vector search.
-
-FAISS would provide more low-level vector index control.
-
-pgvector would be useful if the project later moves to PostgreSQL and needs relational data and vector search in one database.
-
-### Template Explanations vs LLM Explanations
-
-Current explanations are simple and metadata-grounded.
-
-LLM explanations will be added later after retrieval and reranking are stable. This avoids turning the project into an ungrounded chatbot.
-
-## Future Design
-
-The next major feature is memory-based reranking.
-
-A future scoring function may look like:
-
-```text
-final_score =
-  semantic_score
-  + liked_genre_boost
-  - disliked_genre_penalty
-  - watched_penalty
-  + novelty_score
-  + diversity_score
-```
-
-This will turn the current semantic search system into a personalized recommendation system.
-
+Reviews are intentionally absent from the current application while their
+workflow is redesigned. Future reviews should have independent persistence,
+ownership, draft/published status, spoiler handling, moderation, pagination,
+and tests. Raw review text should not be placed into recommendation prompts.
