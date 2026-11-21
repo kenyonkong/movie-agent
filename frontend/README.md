@@ -2,7 +2,17 @@
 
 The frontend is a Next.js 16 and React 19 client for the FastAPI Movie Agent.
 It provides natural-language search, pipeline controls, recommendation cards,
-feedback actions, constraint diagnostics, and execution traces.
+feedback actions, constraint diagnostics, execution traces, and title-only
+catalog browsing.
+
+The app has three routes:
+
+- `/` — semantic recommendations
+- `/movies` — movie title search
+- `/reviews` — review-workspace placeholder
+
+Review buttons are intentionally disabled until the review API and persistence
+workflow are implemented.
 
 ## Setup
 

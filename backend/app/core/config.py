@@ -65,6 +65,7 @@ class Settings(BaseModel):
     backend_dir: Path = Path(__file__).resolve().parents[2]
     data_dir: Path = backend_dir / "data"
     processed_data_dir: Path = data_dir / "processed"
+    movies_clean_path: Path = processed_data_dir / "movies_clean.csv"
     movie_documents_path: Path = processed_data_dir / "movie_documents.jsonl"
 
     # Chroma vector DB path

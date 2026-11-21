@@ -131,6 +131,25 @@ export type RecommendResponse = {
     agent_trace: AgentTrace | null;
 };
 
+export type MovieSearchItem = {
+    movie_id: string;
+    title: string;
+    release_year: number | null;
+    director: string | null;
+    cast: string[];
+    movie_rating: number | null;
+    poster_url: string | null;
+    backdrop_url: string | null;
+};
+
+export type MovieSearchResponse = {
+    query: string;
+    total: number;
+    limit: number;
+    offset: number;
+    results: MovieSearchItem[];
+};
+
 
 export type FeedbackRequest = {
     user_id: string;

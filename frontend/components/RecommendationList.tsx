@@ -52,57 +52,62 @@ export function RecommendationList({
 
     return (
     <section className="mt-8">
-      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-100">
-            Recommendations ({results.length})
-          </h2>
-          <p className="text-sm text-slate-400">
-            Ranked by semantic similarity from your local vector database.
-          </p>
+      <div className="mb-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="eyebrow mb-2">Curated for you</p>
+            <h2 className="font-display text-3xl font-semibold text-[#352D22] md:text-4xl">
+              Recommendations ({results.length})
+            </h2>
+            <p className="mt-1 text-sm text-[#706453]">
+              Ranked from the catalog for relevance, preference, and variety.
+            </p>
+          </div>
+
+          {latencyMs !== null && (
+            <p className="w-fit rounded-full border border-[#BDB76B]/65 bg-[#FFFDF0]/70 px-4 py-2 text-sm text-[#625845]">
+              Ready in {latencyMs.toFixed(0)} ms
+            </p>
+          )}
         </div>
 
-        {latencyMs !== null && (
-          <p className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-300">
-            Latency: {latencyMs.toFixed(2)} ms
-          </p>
-        )}
-        
-        {candidateCount !== null && (
-          <p className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-300">
-            Candidates: {candidateCount}
-          </p>
-        )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {candidateCount !== null && (
+            <p className="rounded-full border border-[#BDB76B]/65 bg-[#FFFDF0]/70 px-4 py-2 text-sm text-[#625845]">
+              Candidates: {candidateCount}
+            </p>
+          )}
 
-        {filteredWatchedCount !== null && !includeWatched && (
-          <p className="rounded-full border border-slate-800 bg-slate-900 px-4 py-2 text-sm text-slate-300">
-            Watched filtered: {filteredWatchedCount}
-          </p>
-        )}
+          {filteredWatchedCount !== null && !includeWatched && (
+            <p className="rounded-full border border-[#BDB76B]/65 bg-[#FFFDF0]/70 px-4 py-2 text-sm text-[#625845]">
+              Watched filtered: {filteredWatchedCount}
+            </p>
+          )}
 
-        {rerankerProvider && (
-          <span className="rounded-full border border-purple-800 bg-purple-950/40 px-4 py-2 text-sm text-slate-300">
-            Reranker: {rerankerProvider}
-          </span>
-        )}
+          {rerankerProvider && (
+            <span className="rounded-full border border-[#CE8946]/55 bg-[#CE8946]/10 px-4 py-2 text-sm text-[#75471F]">
+              Reranker: {rerankerProvider}
+            </span>
+          )}
 
-        {rerankerFallbackUsed && (
-          <span className="rounded-full border border-yellow-700 bg-yellow-950/40 px-4 py-2 text-sm text-yellow-200">
-            LLM reranker fallback used
-          </span>
-        )}
+          {rerankerFallbackUsed && (
+            <span className="rounded-full border border-[#D4AF37]/70 bg-[#D4AF37]/15 px-4 py-2 text-sm text-[#6A550F]">
+              LLM reranker fallback used
+            </span>
+          )}
 
-        {explanationProvider && (
-          <p className="rounded-full border border-cyan-800 bg-cyan-950/40 px-4 py-2 text-sm text-cyan-200">
-            Explanations provided by: {explanationProvider}
-          </p>
-        )}  
+          {explanationProvider && (
+            <p className="rounded-full border border-[#BDB76B]/65 bg-[#BDB76B]/15 px-4 py-2 text-sm text-[#5E5A31]">
+              Explanations: {explanationProvider}
+            </p>
+          )}
 
-        {includeWatched && (
-          <p className="rounded-full border border-purple-800 bg-purple-950/40 px-4 py-2 text-sm text-purple-200">
-            Including watched
-          </p>
-        )}
+          {includeWatched && (
+            <p className="rounded-full border border-[#BDB76B]/65 bg-[#FDFBD4]/80 px-4 py-2 text-sm text-[#5E5A31]">
+              Including watched
+            </p>
+          )}
+        </div>
       </div>
 
 
@@ -112,69 +117,69 @@ export function RecommendationList({
       )}
 
       {parsedIntent && (
-        <section className="mb-5 rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
+        <section className="surface-card mb-5 rounded-3xl p-5">
           <div className="mb-3">
-            <h3 className="text-lg font-bold text-slate-100">
+            <h3 className="font-display text-2xl font-semibold text-[#352D22]">
               Parsed Intent
             </h3>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-sm text-[#706453]">
               The raw query was converted into structured intent before vector retrieval.
             </p>
           </div>
 
           <div className="mb-3 flex flex-wrap gap-2">
             {intentProvider && (
-              <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
+              <span className="rounded-full border border-[#BDB76B]/70 px-3 py-1 text-xs text-[#625845]">
                 Intent: {intentProvider}
               </span>
             )}
 
             {retrievalQuery && (
-              <span className="rounded-full border border-cyan-700 bg-cyan-950/40 px-3 py-1 text-xs text-cyan-200">
+              <span className="rounded-full border border-[#CE8946]/55 bg-[#CE8946]/10 px-3 py-1 text-xs text-[#75471F]">
                 Retrieval query: {retrievalQuery}
               </span>
             )}
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-              <p className="mb-2 text-sm font-semibold text-cyan-300">
+            <div className="rounded-2xl border border-[#BDB76B]/50 bg-[#FDFBD4]/55 p-4">
+              <p className="mb-2 text-sm font-semibold text-[#826714]">
                 Reference movies
               </p>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-[#706453]">
                 {parsedIntent.reference_movies.length > 0
                   ? parsedIntent.reference_movies.join(", ")
                   : "None"}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-              <p className="mb-2 text-sm font-semibold text-purple-300">
+            <div className="rounded-2xl border border-[#BDB76B]/50 bg-[#FDFBD4]/55 p-4">
+              <p className="mb-2 text-sm font-semibold text-[#6D6940]">
                 Moods / tone
               </p>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-[#706453]">
                 {[...parsedIntent.moods, ...parsedIntent.tone].length > 0
                   ? [...parsedIntent.moods, ...parsedIntent.tone].join(", ")
                   : "None"}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-              <p className="mb-2 text-sm font-semibold text-green-300">
+            <div className="rounded-2xl border border-[#BDB76B]/50 bg-[#FDFBD4]/55 p-4">
+              <p className="mb-2 text-sm font-semibold text-[#626633]">
                 Themes / genres
               </p>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-[#706453]">
                 {[...parsedIntent.themes, ...parsedIntent.genres].length > 0
                   ? [...parsedIntent.themes, ...parsedIntent.genres].join(", ")
                   : "None"}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-              <p className="mb-2 text-sm font-semibold text-red-300">
+            <div className="rounded-2xl border border-[#BDB76B]/50 bg-[#FDFBD4]/55 p-4">
+              <p className="mb-2 text-sm font-semibold text-[#9A592E]">
                 Avoid / constraints
               </p>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-[#706453]">
                 {[...parsedIntent.avoid, ...parsedIntent.constraints].length > 0
                   ? [...parsedIntent.avoid, ...parsedIntent.constraints].join(", ")
                   : "None"}
@@ -183,10 +188,10 @@ export function RecommendationList({
           </div>
 
           <details className="mt-3">
-            <summary className="cursor-pointer text-sm font-medium text-cyan-300">
+            <summary className="cursor-pointer text-sm font-semibold text-[#7C5429]">
               Show raw intent JSON
             </summary>
-            <pre className="mt-3 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-xs leading-6 text-slate-400">
+            <pre className="mt-3 overflow-x-auto rounded-2xl border border-[#BDB76B]/60 bg-[#F5EDC5] p-4 text-xs leading-6 text-[#544835]">
               {JSON.stringify(parsedIntent, null, 2)}
             </pre>
           </details>
@@ -195,19 +200,19 @@ export function RecommendationList({
 
 
       {constraintReport?.active && (
-        <section className="mb-6 rounded-3xl border border-emerald-500/30 bg-emerald-950/20 p-5">
+        <section className="mb-6 rounded-3xl border border-[#BDB76B]/70 bg-[#BDB76B]/14 p-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
-              <h3 className="text-lg font-bold text-emerald-200">
+              <h3 className="font-display text-2xl font-semibold text-[#4F542B]">
                 Exact Constraints Enforced
               </h3>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-[#706453]">
                 Every returned movie passed the structured metadata checks.
               </p>
             </div>
 
-            <span className="w-fit rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+            <span className="w-fit rounded-full border border-[#BDB76B] bg-[#FFFDF0]/65 px-3 py-1 text-xs font-semibold text-[#5E5A31]">
               {constraintReport.valid_candidate_count} valid candidates
             </span>
           </div>
@@ -217,7 +222,7 @@ export function RecommendationList({
               (description) => (
                 <span
                   key={description}
-                  className="rounded-full border border-slate-700 bg-slate-950/70 px-3 py-1 text-xs text-slate-300"
+                  className="rounded-full border border-[#BDB76B]/70 bg-[#FFFDF0]/65 px-3 py-1 text-xs text-[#625845]"
                 >
                   {description}
                 </span>
@@ -226,12 +231,12 @@ export function RecommendationList({
           </div>
 
           {constraintReport.result_shortfall > 0 && (
-            <div className="mt-4 rounded-2xl border border-yellow-500/30 bg-yellow-950/30 p-4">
-              <p className="font-medium text-yellow-200">
+            <div className="mt-4 rounded-2xl border border-[#D4AF37]/60 bg-[#D4AF37]/12 p-4">
+              <p className="font-semibold text-[#6A550F]">
                 Fewer strict matches were found
               </p>
 
-              <p className="mt-1 text-sm leading-6 text-slate-300">
+              <p className="mt-1 text-sm leading-6 text-[#625845]">
                 You requested{" "}
                 {constraintReport.requested_top_k} movies,
                 but only{" "}
@@ -243,11 +248,11 @@ export function RecommendationList({
           )}
 
           <details className="mt-4">
-            <summary className="cursor-pointer text-sm font-medium text-emerald-300">
+            <summary className="cursor-pointer text-sm font-semibold text-[#626633]">
               Show constraint debug details
             </summary>
 
-            <pre className="mt-3 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-xs leading-6 text-slate-400">
+            <pre className="mt-3 overflow-x-auto rounded-2xl border border-[#BDB76B]/60 bg-[#F5EDC5] p-4 text-xs leading-6 text-[#544835]">
               {JSON.stringify(
                 constraintReport,
                 null,

@@ -3,7 +3,8 @@ import type {
   RecommendResponse, 
   FeedbackRequest, 
   UserMoviePreferenceResponse,
-  UserMemorySummary
+  UserMemorySummary,
+  MovieSearchResponse,
  } from "@/types/movie";
 
 const API_BASE_URL =
@@ -52,6 +53,44 @@ export async function recommendMovies(
       }
     } catch {
       // Ignore JSON parsing errors and use the default error message
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+
+export async function searchMoviesByTitle(
+  title: string,
+  limit = 20,
+  offset = 0
+): Promise<MovieSearchResponse> {
+  const searchParams = new URLSearchParams({
+    q: title,
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const response = await fetch(
+    `${API_BASE_URL}/movies/search?${searchParams.toString()}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    let errorMessage = `Movie search request failed: ${response.status}`;
+
+    try {
+      const errorBody = await response.json();
+      if (errorBody.detail) {
+        errorMessage = Array.isArray(errorBody.detail)
+          ? JSON.stringify(errorBody.detail)
+          : String(errorBody.detail);
+      }
+    } catch {
+      // Ignore JSON parsing errors and use the default error message.
     }
 
     throw new Error(errorMessage);

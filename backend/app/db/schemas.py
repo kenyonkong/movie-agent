@@ -296,6 +296,25 @@ class RecommendResponse(BaseModel):
     agent_trace: AgentTrace | None = None
 
 
+class MovieSearchItem(BaseModel):
+    movie_id: str
+    title: str
+    release_year: int | None = None
+    director: str | None = None
+    cast: list[str] = Field(default_factory=list)
+    movie_rating: float | None = None
+    poster_url: str | None = None
+    backdrop_url: str | None = None
+
+
+class MovieSearchResponse(BaseModel):
+    query: str
+    total: int
+    limit: int
+    offset: int
+    results: list[MovieSearchItem] = Field(default_factory=list)
+
+
 class FeedbackRequest(BaseModel):
     user_id: str = Field(default="demo_user", min_length=1, max_length=128)
     movie_id: str = Field(..., min_length=1, max_length=128)

@@ -21,14 +21,14 @@ function statusLabel(status: AgentTraceStatus): string {
 
 function statusClasses(status: AgentTraceStatus): string {
   if (status === "completed") {
-    return "border-green-500/40 bg-green-500/10 text-green-300";
+    return "border-[#9AA05B]/60 bg-[#BDB76B]/18 text-[#565A2D]";
   }
 
   if (status === "skipped") {
-    return "border-yellow-500/40 bg-yellow-500/10 text-yellow-300";
+    return "border-[#D4AF37]/60 bg-[#D4AF37]/15 text-[#6A550F]";
   }
 
-  return "border-red-500/40 bg-red-500/10 text-red-300";
+  return "border-[#B86B4B]/55 bg-[#CE8946]/12 text-[#814526]";
 }
 
 
@@ -36,19 +36,19 @@ export function AgentTracePanel({
     trace,
 }: AgentTracePanelProps) {
     return (
-        <section className="mb-6 rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
+        <section className="surface-card mb-6 rounded-3xl p-5">
             <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h3 className="text-lg font-bold text-slate-100">
+                    <h3 className="font-display text-2xl font-semibold text-[#352D22]">
                         MovieAgent Execution Trace
                     </h3>
 
-                    <p className="mt-1 text-sm text-slate-400">
+                    <p className="mt-1 text-sm text-[#706453]">
                         {trace.agent_name} · {trace.agent_version}
                     </p>
                 </div>
 
-                <span className="w-fit rounded-full border border-cyan-700 bg-cyan-950/40 px-3 py-1 text-xs text-cyan-200">
+                <span className="w-fit rounded-full border border-[#D4AF37]/65 bg-[#D4AF37]/12 px-3 py-1 text-xs font-semibold text-[#6A550F]">
                     Total: {trace.total_duration_ms.toFixed(2)} ms
                 </span>
             </div>
@@ -57,16 +57,16 @@ export function AgentTracePanel({
                 {trace.steps.map((step, index) => (
                     <details
                         key={`${step.name}-${index}`}
-                        className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4"
+                        className="rounded-2xl border border-[#BDB76B]/55 bg-[#FDFBD4]/45 p-4"
                     >
                         <summary className="cursor-pointer list-none">
                             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                                 <div className="flex items-center gap-3">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-slate-300">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#BDB76B]/25 text-xs font-semibold text-[#5E5A31]">
                                     {index + 1}
                                 </span>
 
-                                <span className="font-medium text-slate-200">
+                                <span className="font-medium text-[#42382B]">
                                     {step.name}
                                 </span>
 
@@ -79,13 +79,13 @@ export function AgentTracePanel({
                                 </span>
                                 </div>
 
-                                <span className="text-sm text-slate-400">
+                                <span className="text-sm text-[#706453]">
                                     {step.duration_ms.toFixed(2)} ms
                                 </span>
                             </div>
                         </summary>
 
-                        <pre className="mt-4 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900 p-4 text-xs leading-6 text-slate-400">
+                        <pre className="mt-4 overflow-x-auto rounded-xl border border-[#BDB76B]/55 bg-[#F5EDC5] p-4 text-xs leading-6 text-[#544835]">
                             {JSON.stringify(step.details, null, 2)}
                         </pre>
                     </details>

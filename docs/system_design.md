@@ -14,14 +14,21 @@ not introduce arbitrary recommendations.
 
 ```text
 Next.js UI
-  -> FastAPI recommendation endpoint
-  -> structured intent and hard-constraint plan
-  -> Chroma semantic retrieval with metadata pushdown
-  -> deterministic Python constraint validation
-  -> SQLite preference-memory lookup
-  -> watched filtering and heuristic reranking
-  -> optional bounded LLM reranking
-  -> grounded explanations and typed response
+  -> Recommendations route
+     -> FastAPI recommendation endpoint
+     -> structured intent and hard-constraint plan
+     -> Chroma semantic retrieval with metadata pushdown
+     -> deterministic Python constraint validation
+     -> SQLite preference-memory lookup
+     -> watched filtering and heuristic reranking
+     -> optional bounded LLM reranking
+     -> grounded explanations and typed response
+  -> Browse Movies route
+     -> FastAPI title-search endpoint
+     -> local processed CSV catalog
+     -> compact typed movie metadata response
+  -> My Reviews route
+     -> placeholder only; no persistence yet
 ```
 
 `MovieAgent` owns this fixed orchestration order. A per-request state object
@@ -33,6 +40,12 @@ duration, counts, providers, and fallback information.
 The TMDB ingestion pipeline downloads candidate IDs, retrieves movie details,
 credits, and keywords, removes invalid or low-quality records, deduplicates the
 catalog, and writes CSV plus JSONL semantic documents.
+
+The browse workflow reads compact fields from the processed CSV on first use
+and caches them in the API process. It performs case-insensitive substring
+matching against normalized titles only; director, cast, and other metadata are
+returned for display but are not searchable. Matching movies are ordered by
+descending TMDB popularity before pagination is applied.
 
 The embedding layer supports local SentenceTransformers and OpenAI embeddings.
 Each provider/model configuration receives a separate persistent Chroma
@@ -99,7 +112,9 @@ latency, token use, and fallback metrics.
 
 ## Review redesign boundary
 
-Reviews are intentionally absent from the current application while their
-workflow is redesigned. Future reviews should have independent persistence,
-ownership, draft/published status, spoiler handling, moderation, pagination,
-and tests. Raw review text should not be placed into recommendation prompts.
+Review writing is intentionally non-functional while its workflow is
+redesigned. The frontend includes a placeholder route and disabled actions,
+but the API has no review endpoints or persistence. Future reviews should have
+independent persistence, ownership, draft/published status, spoiler handling,
+moderation, pagination, and tests. Raw review text should not be placed into
+recommendation prompts.

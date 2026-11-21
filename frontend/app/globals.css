@@ -1,26 +1,186 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --parchment: #fdfbd4;
+  --antique-gold: #d4af37;
+  --olive-gold: #bdb76b;
+  --caramel: #ce8946;
+  --ink: #352d22;
+  --muted-ink: #706453;
+  --paper: #fffef0;
+  --background: var(--parchment);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: "Trebuchet MS", Arial, Helvetica, sans-serif;
   --font-mono: "Courier New", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--parchment);
 }
 
 body {
-  background: var(--background);
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 8% 4%, rgb(212 175 55 / 18%), transparent 25rem),
+    radial-gradient(circle at 92% 18%, rgb(189 183 107 / 22%), transparent 30rem),
+    linear-gradient(180deg, #fffef0 0%, var(--parchment) 46%, #f8f0c6 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+summary,
+input,
+select,
+textarea {
+  outline-color: var(--caramel);
+}
+
+::selection {
+  background: rgb(212 175 55 / 38%);
+  color: var(--ink);
+}
+
+.font-display {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.025em;
+}
+
+.app-page {
+  min-height: 100vh;
+  color: var(--ink);
+}
+
+.page-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgb(189 183 107 / 60%);
+  background:
+    linear-gradient(120deg, rgb(255 254 240 / 96%), rgb(253 251 212 / 90%)),
+    var(--parchment);
+  box-shadow: 0 24px 70px rgb(91 72 30 / 13%);
+}
+
+.page-hero::before,
+.page-hero::after {
+  position: absolute;
+  z-index: -1;
+  border-radius: 999px;
+  content: "";
+  filter: blur(2px);
+}
+
+.page-hero::before {
+  top: -7rem;
+  right: -4rem;
+  width: 20rem;
+  height: 20rem;
+  background: rgb(212 175 55 / 20%);
+}
+
+.page-hero::after {
+  right: 10rem;
+  bottom: -9rem;
+  width: 16rem;
+  height: 16rem;
+  background: rgb(189 183 107 / 22%);
+}
+
+.eyebrow {
+  color: #826714;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.surface-card {
+  border: 1px solid rgb(189 183 107 / 58%);
+  background: rgb(255 254 240 / 90%);
+  box-shadow: 0 18px 50px rgb(91 72 30 / 12%);
+  backdrop-filter: blur(12px);
+}
+
+.warm-field {
+  border: 1px solid rgb(189 183 107 / 85%);
+  background: rgb(255 254 240 / 94%);
+  color: var(--ink);
+  box-shadow: inset 0 1px 2px rgb(91 72 30 / 8%);
+}
+
+.warm-field::placeholder {
+  color: #94866f;
+}
+
+.warm-field:focus {
+  border-color: var(--caramel);
+  box-shadow: 0 0 0 3px rgb(206 137 70 / 20%);
+}
+
+.warm-select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #5d513f 50%),
+    linear-gradient(135deg, #5d513f 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) calc(50% - 2px),
+    calc(100% - 10px) calc(50% - 2px);
+  background-repeat: no-repeat;
+  background-size: 5px 5px, 5px 5px;
+  padding-right: 2.25rem;
+}
+
+.primary-action {
+  border: 1px solid #b86f32;
+  background: var(--caramel);
+  color: #2f251a;
+  box-shadow: 0 8px 20px rgb(143 84 33 / 20%);
+}
+
+.primary-action:hover:not(:disabled) {
+  background: #d99858;
+  transform: translateY(-1px);
+  box-shadow: 0 11px 24px rgb(143 84 33 / 24%);
+}
+
+.secondary-action {
+  border: 1px solid rgb(189 183 107 / 90%);
+  background: rgb(255 254 240 / 72%);
+  color: var(--ink);
+}
+
+.secondary-action:hover:not(:disabled) {
+  border-color: var(--caramel);
+  background: #fff9dc;
+}
+
+.empty-state {
+  border: 1px dashed rgb(189 183 107 / 90%);
+  background: rgb(255 254 240 / 55%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

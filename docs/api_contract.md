@@ -52,6 +52,42 @@ The response field is named `include_watched`, matching the request contract.
 When exact constraints leave fewer than `top_k` valid movies, `results` is
 shorter and `constraint_report.result_shortfall` explains the difference.
 
+## Search the movie catalog
+
+```http
+GET /movies/search?q=Batman&limit=20&offset=0
+```
+
+The endpoint performs case-insensitive substring matching against the `title`
+field only and returns matches in descending TMDB popularity order. `q` must
+contain 1–200 characters, `limit` must be 1–50, and `offset` must be zero or
+greater.
+
+Example response:
+
+```json
+{
+  "query": "Batman",
+  "total": 3,
+  "limit": 20,
+  "offset": 0,
+  "results": [
+    {
+      "movie_id": "268",
+      "title": "Batman",
+      "release_year": 1989,
+      "director": "Tim Burton",
+      "cast": ["Michael Keaton", "Jack Nicholson"],
+      "movie_rating": 7.2,
+      "poster_url": "https://image.tmdb.org/t/p/w500/example.jpg",
+      "backdrop_url": "https://image.tmdb.org/t/p/w780/example.jpg"
+    }
+  ]
+}
+```
+
+Search does not use embeddings, feedback memory, or review data.
+
 ## Save feedback
 
 ```http

@@ -21,9 +21,12 @@ Implemented:
 - Template or OpenAI grounded explanations
 - Sanitized per-request agent traces
 - Next.js recommendation and feedback interface
+- Title-only catalog search with poster, backdrop, cast, director, year, and rating metadata
+- Route-backed Recommendations, Browse Movies, and My Reviews navigation
 - End-to-end evaluation across retrieval and agent configurations
 
-Review functionality is not currently part of the active API or frontend. It is described as future work below.
+Review persistence and editing are not active yet. The frontend exposes disabled
+review actions and a placeholder workspace for the next implementation phase.
 
 ## Why This Is More Than a Chatbot
 
@@ -349,6 +352,17 @@ POST /feedback/
 
 Supported actions are like, dislike, watched, and save.
 
+### Search the movie catalog
+
+```http
+GET /movies/search?q=Batman&limit=20&offset=0
+```
+
+Catalog search performs case-insensitive substring matching against movie titles
+only and orders matches by descending TMDB popularity. The response includes
+pagination metadata and compact movie records with title, year, director, cast,
+rating, poster URL, and backdrop URL.
+
 ### Read feedback memory
 
 ```http
@@ -411,6 +425,7 @@ linting, and production build for every push and pull request.
 - OpenAI intent parsing, reranking, and explanations add latency and usage cost.
 - Template intent parsing intentionally recognizes only a limited set of explicit phrases.
 - Evaluation uses a small, manually curated development set.
+- Catalog browsing currently searches titles only and loads the local processed CSV.
 - Review creation, editing, publishing, and display are not active features.
 
 ## Future Direction: Movie Reviews
@@ -498,7 +513,7 @@ Before reviews become public or multi-user, add:
 
 ## Broader Roadmap
 
-- Add automated API integration tests
+- Expand automated API integration coverage
 - Add authentication and persistent user profiles
 - Build the review workflow described above
 - Expand human relevance judgments and repeat LLM evaluations

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState} from "react";
+import { useState } from "react";
 import { RecommendationList } from "@/components/RecommendationList";
 import { SearchBar } from "@/components/SearchBar";
 import { recommendMovies, getUserMemorySummary } from "@/lib/api";
@@ -139,44 +139,42 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <section className="mx-auto max-w-5xl px-6 py-10 md:py-16">
-        <div className="mb-8">
-          <p className="mb-2 text-sm font-medium uppercase tracking-[0.3em] text-cyan-400">
-            Movie Agent
-          </p>
-          <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
-            Semantic Movie Recommendations
+    <main className="app-page">
+      <section className="mx-auto max-w-6xl px-6 py-10 md:py-14">
+        <div className="page-hero mb-8 rounded-[2.25rem] px-6 py-10 md:px-10 md:py-14">
+          <p className="eyebrow mb-3">Thoughtful movie discovery</p>
+          <h1 className="font-display max-w-4xl text-4xl font-semibold leading-[1.05] text-[#352D22] md:text-6xl lg:text-7xl">
+            Find the movie that fits the moment.
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400 md:text-lg">
-            This is the first full-stack version of the project: a Next.js UI
-            calling a FastAPI backend that retrieves movie candidates from a
-            Chroma vector database.
+          <p className="mt-5 max-w-2xl text-base leading-7 text-[#706453] md:text-lg">
+            Describe what you want to feel, and Movie Agent will search the
+            catalog for grounded, personal recommendations with reasons you can
+            trust.
           </p>
         </div>
 
         {memorySummary && (
-          <section className="mb-8 rounded-3xl border border-slate-800 bg-slate-900/70 p-5">
+          <section className="surface-card mb-8 rounded-3xl p-5">
             <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-100">
+                <h2 className="font-display text-2xl font-semibold text-[#352D22]">
                   User Memory
                 </h2>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[#706453]">
                   Feedback stored for {memorySummary.user_id}
                 </p>
               </div>
-              <p className="rounded-full border border-slate-700 px-3 py-2 text-sm text-slate-300">
+              <p className="rounded-full border border-[#BDB76B]/70 bg-[#FDFBD4]/70 px-3 py-2 text-sm text-[#544835]">
                 {memorySummary.total_preferences} movie preference states
               </p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                <p className="mb-2 text-sm font-semibold text-cyan-300">
+              <div className="rounded-2xl border border-[#BDB76B]/50 bg-[#FDFBD4]/55 p-4">
+                <p className="mb-2 text-sm font-semibold text-[#826714]">
                   Liked genres
                 </p>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[#706453]">
                   {Object.keys(memorySummary.liked_genres).length > 0
                     ? Object.entries(memorySummary.liked_genres)
                         .map(([genre, count]) => `${genre} (${count})`)
@@ -185,11 +183,11 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                <p className="mb-2 text-sm font-semibold text-red-300">
+              <div className="rounded-2xl border border-[#BDB76B]/50 bg-[#FDFBD4]/55 p-4">
+                <p className="mb-2 text-sm font-semibold text-[#9A592E]">
                   Disliked genres
                 </p>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[#706453]">
                   {Object.keys(memorySummary.disliked_genres).length > 0
                     ? Object.entries(memorySummary.disliked_genres)
                         .map(([genre, count]) => `${genre} (${count})`)
@@ -200,22 +198,22 @@ export default function Home() {
             </div>
 
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                <p className="mb-2 text-sm font-semibold text-purple-300">
+              <div className="rounded-2xl border border-[#BDB76B]/50 bg-[#FDFBD4]/55 p-4">
+                <p className="mb-2 text-sm font-semibold text-[#6D6940]">
                   Watched movies
                 </p>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[#706453]">
                   {memorySummary.watched_movies.length > 0
                     ? memorySummary.watched_movies.join(", ")
                     : "No watched movies yet."}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                <p className="mb-2 text-sm font-semibold text-yellow-300">
+              <div className="rounded-2xl border border-[#BDB76B]/50 bg-[#FDFBD4]/55 p-4">
+                <p className="mb-2 text-sm font-semibold text-[#826714]">
                   Saved movies
                 </p>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-[#706453]">
                   {memorySummary.saved_movies.length > 0
                     ? memorySummary.saved_movies.join(", ")
                     : "No saved movies yet."}
@@ -248,31 +246,36 @@ export default function Home() {
         />
 
         {error && (
-          <div className="mt-6 rounded-2xl border border-red-900/70 bg-red-950/40 p-4 text-sm text-red-200">
-            <p className="font-semibold">Something went wrong</p>
+          <div className="mt-6 rounded-2xl border border-[#B86B4B]/55 bg-[#FFF2DF] p-4 text-sm text-[#764025] shadow-sm">
+            <p className="font-semibold">We could not find recommendations</p>
             <p className="mt-1">{error}</p>
           </div>
         )}
 
         {isLoading && (
-          <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 text-slate-300">
-            Searching your movie vector database...
+          <div className="surface-card mt-8 rounded-3xl p-6 text-[#625845]">
+            <p className="font-display text-xl text-[#352D22]">
+              Curating your recommendations...
+            </p>
+            <p className="mt-1 text-sm text-[#706453]">
+              Searching the catalog and ranking the strongest matches.
+            </p>
           </div>
         )}
 
         {lastQuery && !isLoading && (
-          <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300">
-            <span className="font-semibold text-slate-100">Last query:</span>{" "}
+          <div className="mt-6 rounded-2xl border border-[#BDB76B]/55 bg-[#FFFDF0]/65 p-4 text-sm text-[#625845]">
+            <span className="font-semibold text-[#352D22]">Your request:</span>{" "}
             {lastQuery}
           </div>
         )}
 
         {!isLoading && !lastQuery && results.length === 0 && (
-          <div className="mt-8 rounded-3xl border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
-            <p className="text-lg font-semibold text-slate-200">
+          <div className="empty-state mt-8 rounded-3xl p-8 text-center">
+            <p className="font-display text-2xl font-semibold text-[#352D22]">
               Start with a natural-language movie mood.
             </p>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-[#706453]">
               Try describing a reference movie, emotion, genre, pacing, or theme.
             </p>
           </div>

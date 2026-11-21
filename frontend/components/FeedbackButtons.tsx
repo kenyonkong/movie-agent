@@ -102,8 +102,8 @@ export function FeedbackButtons({
               className={[
                 "rounded-full border px-3 py-2 text-xs transition disabled:cursor-not-allowed disabled:opacity-60",
                 isActive
-                  ? "border-cyan-400 bg-cyan-400/10 text-cyan-300"
-                  : "border-slate-700 text-slate-300 hover:border-cyan-400 hover:text-cyan-300",
+                  ? "border-[#CE8946] bg-[#CE8946]/15 font-semibold text-[#78481F] shadow-sm"
+                  : "border-[#BDB76B]/75 bg-[#FFFDF0]/65 text-[#625845] hover:border-[#CE8946] hover:bg-[#CE8946]/10 hover:text-[#78481F]",
               ].join(" ")}
             >
               {isPending ? "Saving..." : label}
@@ -112,9 +112,9 @@ export function FeedbackButtons({
         })}
       </div>
 
-      {statusMessage && <p className="mt-2 text-xs text-green-300">{statusMessage}</p>}
+      {statusMessage && <p className="mt-2 text-xs text-[#5E6335]">{statusMessage}</p>}
 
-      {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
+      {error && <p className="mt-2 text-xs text-[#8B472D]">{error}</p>}
     </div>
   );
 }
