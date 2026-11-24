@@ -97,6 +97,25 @@ def test_search_matches_only_title_and_formats_metadata(
     assert all(movie.title != "Unrelated Movie" for movie in results)
 
 
+def test_search_normalizes_punctuation_and_matches_partial_titles(tmp_path: Path) -> None:
+    catalog_path = tmp_path / "movies.csv"
+    catalog_path.write_text(
+        "id,title,popularity\n1,Spider-Man: Homecoming,20\n2,The Amazing Spider-Man,10\n",
+        encoding="utf-8",
+    )
+    service = MovieCatalogService(catalog_path)
+
+    for query in ("spider man", "SPIDER  MAN", "spider–man", "spider m"):
+        results, total = service.search(query)
+        assert total == 2
+        assert [movie.title for movie in results] == [
+            "Spider-Man: Homecoming",
+            "The Amazing Spider-Man",
+        ]
+
+    assert service.search("---") == ([], 0)
+
+
 def test_search_supports_pagination(tmp_path: Path) -> None:
     catalog_path = tmp_path / "movies.csv"
     write_catalog(catalog_path)

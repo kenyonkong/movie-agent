@@ -64,7 +64,8 @@ export async function recommendMovies(
 export async function searchMoviesByTitle(
   title: string,
   limit = 20,
-  offset = 0
+  offset = 0,
+  signal?: AbortSignal
 ): Promise<MovieSearchResponse> {
   const searchParams = new URLSearchParams({
     q: title,
@@ -76,6 +77,7 @@ export async function searchMoviesByTitle(
     {
       method: "GET",
       cache: "no-store",
+      signal,
     }
   );
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 
 import { BrowseMovieCard } from "@/components/BrowseMovieCard";
+import { MovieTitleInput } from "@/components/MovieTitleInput";
 import { searchMoviesByTitle } from "@/lib/api";
 import type { MovieSearchItem } from "@/types/movie";
 
@@ -65,6 +66,15 @@ export default function BrowseMoviesPage() {
     }
   }
 
+  function selectSuggestion(movie: MovieSearchItem) {
+    setQuery(movie.title);
+    setLastQuery(movie.title);
+    setResults([movie]);
+    setTotal(1);
+    setOffset(0);
+    setError(null);
+  }
+
   const firstResult = total === 0 ? 0 : offset + 1;
   const lastResult = Math.min(offset + results.length, total);
 
@@ -84,7 +94,7 @@ export default function BrowseMoviesPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="surface-card rounded-[2rem] p-5 md:p-7"
+          className="surface-card relative z-10 rounded-[2rem] p-5 md:p-7"
         >
           <label
             htmlFor="movie-title-search"
@@ -93,14 +103,11 @@ export default function BrowseMoviesPage() {
             Movie title
           </label>
           <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-            <input
-              id="movie-title-search"
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Try Batman, Parasite, or Spirited Away"
-              autoComplete="off"
-              className="warm-field min-w-0 flex-1 rounded-xl px-4 py-3 outline-none transition"
+            <MovieTitleInput
+              query={query}
+              onChange={setQuery}
+              onSelect={selectSuggestion}
+              searching={isLoading}
             />
             <button
               type="submit"

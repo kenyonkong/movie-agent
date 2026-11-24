@@ -1,4 +1,5 @@
 import csv
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
@@ -128,7 +129,12 @@ class MovieCatalogService:
 
     @staticmethod
     def _normalize_title(value: str) -> str:
-        return " ".join(value.split()).casefold()
+        text = unicodedata.normalize("NFKC", value).casefold()
+        separated = "".join(
+            " " if unicodedata.category(character).startswith("P") else character
+            for character in text
+        )
+        return " ".join(separated.split())
 
     @staticmethod
     def _optional_string(value: str | None) -> str | None:
