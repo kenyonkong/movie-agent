@@ -110,11 +110,9 @@ latency, token use, and fallback metrics.
 - OpenAI stages add latency and usage cost and remain optional.
 - The evaluation set is a small development benchmark.
 
-## Review redesign boundary
+## Movie reviews
 
-Review writing is intentionally non-functional while its workflow is
-redesigned. The frontend includes a placeholder route and disabled actions,
-but the API has no review endpoints or persistence. Future reviews should have
-independent persistence, ownership, draft/published status, spoiler handling,
-moderation, pagination, and tests. Raw review text should not be placed into
-recommendation prompts.
+SQLite stores one review per user and movie. The API accepts review text and
+an integer rating from 1 to 10, displayed on the frontend in half-star steps.
+My Reviews lists entries by descending update time. The frontend uses the
+existing demo identity while authentication is pending.

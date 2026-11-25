@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppNavigation } from "@/components/AppNavigation";
+import { ReviewsProvider } from "@/components/ReviewsProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
         <AppNavigation />
-        {children}
+        <ReviewsProvider>{children}</ReviewsProvider>
       </body>
     </html>
   );

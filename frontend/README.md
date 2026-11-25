@@ -9,10 +9,10 @@ The app has three routes:
 
 - `/` — semantic recommendations
 - `/movies` — movie title search
-- `/reviews` — review-workspace placeholder
+- `/reviews` — saved movie reviews, most recently updated first
 
-Review buttons are intentionally disabled until the review API and persistence
-workflow are implemented.
+Recommendation and browse cards let the demo user write and edit reviews with
+a required rating from half a star to five stars.
 
 ## Setup
 

@@ -50,6 +50,19 @@ class MovieCatalogService:
         page = matches[offset : offset + limit]
         return [movie.item for movie in page], total
 
+    def get_posters(self, movie_ids: set[str]) -> dict[str, str | None]:
+        if not movie_ids:
+            return {}
+        try:
+            movies = self._get_movies()
+        except FileNotFoundError:
+            return {}
+        return {
+            movie.item.movie_id: movie.item.poster_url
+            for movie in movies
+            if movie.item.movie_id in movie_ids
+        }
+
     def _get_movies(self) -> list[_CatalogMovie]:
         if self._movies is None:
             with self._load_lock:

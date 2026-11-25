@@ -5,10 +5,32 @@ import type {
   UserMoviePreferenceResponse,
   UserMemorySummary,
   MovieSearchResponse,
+  MovieReview,
  } from "@/types/movie";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
+const REVIEWS_URL = `${API_BASE_URL}/users/demo_user/reviews`;
+
+export async function getReviews(signal: AbortSignal): Promise<MovieReview[]> {
+  const response = await fetch(REVIEWS_URL, { signal, cache: "no-store" });
+  if (!response.ok) throw new Error("Could not load your reviews.");
+  return response.json();
+}
+
+export async function saveReview(
+  movieId: string,
+  review: Pick<MovieReview, "title" | "rating" | "body">,
+): Promise<MovieReview> {
+  const response = await fetch(`${REVIEWS_URL}/${encodeURIComponent(movieId)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(review),
+  });
+  if (!response.ok) throw new Error("Could not save your review. Please try again.");
+  return response.json();
+}
 
 export type HealthResponse = {
   status: string;

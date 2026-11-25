@@ -1,9 +1,25 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
+
+
+class MovieReview(Base):
+    __tablename__ = "movie_reviews"
+    __table_args__ = (
+        UniqueConstraint("user_id", "movie_id", name="uq_movie_review"),
+        CheckConstraint("rating BETWEEN 1 AND 10", name="ck_movie_review_rating"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128), index=True)
+    movie_id: Mapped[str] = mapped_column(String(128))
+    title: Mapped[str] = mapped_column(String(512))
+    rating: Mapped[int]
+    body: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 class UserMoviePreference(Base):
     """

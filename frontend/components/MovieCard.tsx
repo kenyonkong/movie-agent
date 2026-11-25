@@ -1,6 +1,7 @@
 import type { MovieRecommendation, UserMoviePreferenceResponse } from "@/types/movie";
 import { FeedbackButtons } from "@/components/FeedbackButtons";
-import { ReviewActionPlaceholder } from "@/components/ReviewActionPlaceholder";
+import { MovieReviewPanel } from "@/components/MovieReviewPanel";
+import { useReviews } from "@/components/ReviewsProvider";
 import Image from "next/image"; 
 
 type MovieCardProps = {
@@ -22,6 +23,11 @@ export function MovieCard({
   query,
   onPreferenceSaved,
 }: MovieCardProps) {
+  const { reviews } = useReviews();
+  const watched = movie.watched || reviews.some(
+    (review) => review.movie_id === movie.movie_id && review.watched,
+  );
+
   return (
     <article className="surface-card overflow-hidden rounded-[2rem] transition duration-300 hover:-translate-y-1 hover:border-[#CE8946]/70 hover:shadow-[0_26px_64px_rgba(91,72,30,0.18)]">
       <div className="flex flex-col md:flex-row">
@@ -117,7 +123,7 @@ export function MovieCard({
                     </span>
                   )}
 
-                  {movie.watched && (
+                  {watched && (
                     <span className="rounded-full border border-[#BDB76B]/80 bg-[#FDFBD4]/80 px-3 py-1 text-xs font-semibold text-[#5E5A31] backdrop-blur-sm">
                       Watched
                     </span>
@@ -221,14 +227,14 @@ export function MovieCard({
 
             {/* User feedback controls */}
             <FeedbackButtons
-              movie={movie}
+              movie={{ ...movie, watched }}
               userId={userId}
               query={query}
               onFeedbackSaved={onPreferenceSaved}
             />
 
             <div className="mt-3">
-              <ReviewActionPlaceholder />
+              <MovieReviewPanel movieId={movie.movie_id} title={movie.title} />
             </div>
           </div>
         </div>

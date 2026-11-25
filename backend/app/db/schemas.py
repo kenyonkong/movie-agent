@@ -1,7 +1,26 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints, field_serializer
 
-from datetime import datetime
-from typing import Literal, Any
+from datetime import datetime, timezone
+from typing import Annotated, Literal, Any
+
+
+class MovieReviewWrite(BaseModel):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=512)]
+    rating: int = Field(strict=True, ge=1, le=10)
+    body: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
+
+
+class MovieReviewResponse(MovieReviewWrite):
+    movie_id: str
+    updated_at: datetime
+    poster_url: str | None = None
+    watched: bool
+
+    @field_serializer("updated_at")
+    def serialize_updated_at(self, value: datetime) -> str:
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.isoformat()
 
 FeedbackAction = Literal["like", "dislike", "watched", "save"]
 PreferenceValue = Literal["like", "dislike"]

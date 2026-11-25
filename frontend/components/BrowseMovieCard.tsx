@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { ReviewActionPlaceholder } from "@/components/ReviewActionPlaceholder";
+import { MovieReviewPanel } from "@/components/MovieReviewPanel";
 import type { MovieSearchItem } from "@/types/movie";
 
 type BrowseMovieCardProps = {
@@ -98,7 +98,7 @@ export function BrowseMovieCard({
             </div>
 
             <div>
-              <ReviewActionPlaceholder />
+              <MovieReviewPanel movieId={movie.movie_id} title={movie.title} />
             </div>
           </div>
         </div>

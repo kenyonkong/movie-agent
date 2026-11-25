@@ -215,3 +215,12 @@ export type ConstraintReport = {
     number
   >;
 };
+export type MovieReview = {
+  movie_id: string;
+  poster_url: string | null;
+  watched: boolean;
+  title: string;
+  rating: number;
+  body: string;
+  updated_at: string;
+};

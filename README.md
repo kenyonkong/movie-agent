@@ -25,8 +25,8 @@ Implemented:
 - Route-backed Recommendations, Browse Movies, and My Reviews navigation
 - End-to-end evaluation across retrieval and agent configurations
 
-Review persistence and editing are not active yet. The frontend exposes disabled
-review actions and a placeholder workspace for the next implementation phase.
+Users can write and edit rated reviews from both movie discovery pages and
+see their reviews in My Reviews, ordered by most recent update.
 
 ## Why This Is More Than a Chatbot
 
@@ -426,7 +426,7 @@ linting, and production build for every push and pull request.
 - Template intent parsing intentionally recognizes only a limited set of explicit phrases.
 - Evaluation uses a small, manually curated development set.
 - Catalog browsing currently searches titles only and loads the local processed CSV.
-- Review creation, editing, publishing, and display are not active features.
+- Reviews use the shared development identity and are stored locally.
 
 ## Future Direction: Movie Reviews
 
