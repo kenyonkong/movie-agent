@@ -585,6 +585,7 @@ class MovieAgent:
                     candidates=state.candidates_for_reranking,
                     user_memory=state.user_memory,
                     top_k=heuristic_top_k,
+                    include_watched=state.request.include_watched,
                 )
             )
 

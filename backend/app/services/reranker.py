@@ -59,12 +59,14 @@ class MovieReranker:
         candidates: list[dict[str, Any]],
         user_memory: dict,
         top_k: int,
+        *,
+        include_watched: bool = False,
     ) -> list[dict[str, Any]]:
         """
         Rerank candidate movies and return the top_k final results.
         """
         reranked_candidates = [
-            self._score_candidate(candidate, user_memory)
+            self._score_candidate(candidate, user_memory, include_watched=include_watched)
             for candidate in candidates
         ]
         # Sort by final score descending
@@ -81,6 +83,8 @@ class MovieReranker:
             self,
             candidate: dict[str, Any],
             user_memory: dict,
+            *,
+            include_watched: bool,
     ) -> dict[str, Any]:
         movie_id = str(candidate.get("id"))
         genres_text = candidate.get("genres") or ""
@@ -113,7 +117,7 @@ class MovieReranker:
             preference = "dislike"
 
         saved_boost = self.SAVED_WEIGHT if saved else 0.0
-        watched_penalty = self.WATCHED_PENALTY if watched else 0.0
+        watched_penalty = self.WATCHED_PENALTY if watched and not include_watched else 0.0
 
         base_score = (
             semantic_score * self.SEMANTIC_WEIGHT

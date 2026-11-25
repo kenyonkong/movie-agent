@@ -139,6 +139,8 @@ class FakeReranker:
         candidates: list[dict[str, Any]],
         user_memory: dict[str, Any],
         top_k: int,
+        *,
+        include_watched: bool = False,
     ) -> list[dict[str, Any]]:
         self.calls.append("rerank")
 
