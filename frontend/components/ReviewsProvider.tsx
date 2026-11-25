@@ -43,7 +43,9 @@ export function ReviewsProvider({ children }: { children: ReactNode }) {
   function update(review: MovieReview) {
     setReviews((current) =>
       [review, ...current.filter((item) => item.movie_id !== review.movie_id)]
-        .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at)),
+        .sort((a, b) =>
+          Date.parse(b.marked_date ?? b.updated_at) - Date.parse(a.marked_date ?? a.updated_at),
+        ),
     );
   }
 

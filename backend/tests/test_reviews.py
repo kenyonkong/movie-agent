@@ -11,6 +11,7 @@ from app.api.routes import feedback, reviews
 from app.db.database import Base, get_db
 from app.db.models import MovieReview
 from app.services.movie_catalog import MovieCatalogService
+from app.scripts.import_douban_reviews import PreparedExport, import_reviews
 
 
 @pytest.fixture
@@ -105,3 +106,40 @@ def test_legacy_half_star_rating_rounds_up(client):
     response = client.get("/users/demo_user/reviews")
     assert response.status_code == 200
     assert response.json()[0]["rating"] == 4
+
+
+def test_import_keeps_douban_dates_and_is_repeatable(client):
+    source = PreparedExport.model_validate({
+        "source": "douban",
+        "records": [
+            {
+                "record_id": str(movie_id),
+                "movie_id": str(movie_id),
+                "match_status": "matched",
+                "title": f"Film {movie_id}",
+                "rating": 4,
+                "review_original": "好看",
+                "review_en": "A good watch.",
+                "marked_date": marked_date,
+            }
+            for movie_id, marked_date in [(1, "2023-07-21"), (2, "2018-01-01")]
+        ],
+    })
+    test_db = client.app.dependency_overrides[get_db]
+    with closing(test_db()) as sessions:
+        db = next(sessions)
+        with db.begin():
+            assert import_reviews(db, source, "demo_user")["imported"] == 2
+        with db.begin():
+            assert import_reviews(db, source, "demo_user")["existing"] == 2
+
+    path = "/users/demo_user/reviews"
+    edited = client.put(f"{path}/2", json={"title": "Film 2", "rating": 5, "body": "Edited."})
+    assert edited.json()["marked_date"] == "2018-01-01"
+    assert edited.json()["review_en"] is None
+    saved = client.get(path).json()
+    assert [review["movie_id"] for review in saved] == ["1", "2"]
+    assert saved[0]["marked_date"] == "2023-07-21"
+    assert saved[0]["title"] == "Spider-Man"
+    assert saved[0]["review_en"] == "A good watch."
+    assert all(review["watched"] for review in saved)

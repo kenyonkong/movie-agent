@@ -2,14 +2,14 @@ from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path
-from sqlalchemy import and_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.api.routes.movies import movie_catalog
-from app.db.models import MovieReview, UserMoviePreference
-from app.db.schemas import MovieReviewResponse, MovieReviewWrite
+from app.db.models import DoubanReviewSource, MovieReview, UserMoviePreference
+from app.db.schemas import MovieReviewResponse, MovieReviewWrite, MovieSearchItem
 
 router = APIRouter(prefix="/users/{user_id}/reviews", tags=["reviews"])
 Identifier = Annotated[str, Path(min_length=1, max_length=128)]
@@ -19,7 +19,8 @@ Database = Annotated[Session, Depends(get_db)]
 @router.get("", response_model=list[MovieReviewResponse])
 def list_reviews(user_id: Identifier, db: Database) -> list[MovieReviewResponse]:
     rows = db.execute(
-        select(MovieReview, UserMoviePreference.watched)
+        select(MovieReview, UserMoviePreference.watched, DoubanReviewSource)
+        .outerjoin(DoubanReviewSource, DoubanReviewSource.review_id == MovieReview.id)
         .outerjoin(
             UserMoviePreference,
             and_(
@@ -28,12 +29,15 @@ def list_reviews(user_id: Identifier, db: Database) -> list[MovieReviewResponse]
             ),
         )
         .where(MovieReview.user_id == user_id)
-        .order_by(MovieReview.updated_at.desc(), MovieReview.id.desc())
+        .order_by(
+            func.coalesce(DoubanReviewSource.marked_at, MovieReview.updated_at).desc(),
+            MovieReview.id.desc(),
+        )
     ).all()
-    posters = movie_catalog.get_posters({review.movie_id for review, _ in rows})
+    movies = movie_catalog.get_movies_by_id({review.movie_id for review, _, _ in rows})
     return [
-        review_response(review, posters.get(review.movie_id), bool(watched))
-        for review, watched in rows
+        review_response(review, movies.get(review.movie_id), bool(watched), source)
+        for review, watched, source in rows
     ]
 
 
@@ -41,11 +45,13 @@ def list_reviews(user_id: Identifier, db: Database) -> list[MovieReviewResponse]
 def save_review(
     user_id: Identifier, movie_id: Identifier, request: MovieReviewWrite, db: Database
 ) -> MovieReviewResponse:
-    poster = movie_catalog.get_posters({movie_id}).get(movie_id)
+    movie = movie_catalog.get_movies_by_id({movie_id}).get(movie_id)
     for attempt in range(2):
         try:
             review = persist_review(db, user_id, movie_id, request)
-            return review_response(review, poster, watched=True)
+            return review_response(
+                review, movie, watched=True, source=db.get(DoubanReviewSource, review.id)
+            )
         except IntegrityError:
             # A concurrent request may have created either row first.
             db.rollback()
@@ -80,14 +86,17 @@ def persist_review(
 
 
 def review_response(
-    review: MovieReview, poster_url: str | None, watched: bool,
+    review: MovieReview, movie: MovieSearchItem | None, watched: bool,
+    source: DoubanReviewSource | None = None,
 ) -> MovieReviewResponse:
     return MovieReviewResponse(
         movie_id=review.movie_id,
-        title=review.title,
+        title=movie.title if source and movie else review.title,
         rating=(review.rating + 1) // 2,
         body=review.body,
         updated_at=review.updated_at,
-        poster_url=poster_url,
+        poster_url=movie.poster_url if movie else None,
         watched=watched,
+        marked_date=source.marked_at.date() if source else None,
+        review_en=source.english_body if source and review.body == source.original_body else None,
     )

@@ -217,6 +217,8 @@ export type ConstraintReport = {
 };
 export type MovieReview = {
   movie_id: string;
+  marked_date: string | null;
+  review_en: string | null;
   poster_url: string | null;
   watched: boolean;
   title: string;

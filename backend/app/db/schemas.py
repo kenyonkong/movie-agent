@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, StringConstraints, field_serializer
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Annotated, Literal, Any
 
 
@@ -15,6 +15,8 @@ class MovieReviewResponse(MovieReviewWrite):
     updated_at: datetime
     poster_url: str | None = None
     watched: bool
+    marked_date: date | None = None
+    review_en: str | None = None
 
     @field_serializer("updated_at")
     def serialize_updated_at(self, value: datetime) -> str:

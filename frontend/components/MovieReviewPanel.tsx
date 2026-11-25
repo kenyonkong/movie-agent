@@ -134,7 +134,9 @@ export function MovieReviewPanel({ movieId, title, review }: {
             </span>
             <span className="sr-only">{current.rating} out of 5 stars</span>
           </p>
-          <p className="mt-2 whitespace-pre-wrap break-words">{current.body}</p>
+          <p className="mt-2 whitespace-pre-wrap break-words" lang={current.review_en ? "en" : undefined}>
+            {current.review_en ?? current.body}
+          </p>
         </div>
       )}
       <button type="button" onClick={() => setEditing(true)} className="secondary-action rounded-full px-4 py-2 text-sm font-semibold">

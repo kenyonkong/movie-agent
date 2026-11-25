@@ -50,7 +50,7 @@ class MovieCatalogService:
         page = matches[offset : offset + limit]
         return [movie.item for movie in page], total
 
-    def get_posters(self, movie_ids: set[str]) -> dict[str, str | None]:
+    def get_movies_by_id(self, movie_ids: set[str]) -> dict[str, MovieSearchItem]:
         if not movie_ids:
             return {}
         try:
@@ -58,7 +58,7 @@ class MovieCatalogService:
         except FileNotFoundError:
             return {}
         return {
-            movie.item.movie_id: movie.item.poster_url
+            movie.item.movie_id: movie.item
             for movie in movies
             if movie.item.movie_id in movie_ids
         }

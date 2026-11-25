@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
@@ -20,6 +20,19 @@ class MovieReview(Base):
     rating: Mapped[int]
     body: Mapped[str] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class DoubanReviewSource(Base):
+    __tablename__ = "douban_review_sources"
+
+    review_id: Mapped[int] = mapped_column(
+        ForeignKey("movie_reviews.id", ondelete="CASCADE"), primary_key=True
+    )
+    record_id: Mapped[str] = mapped_column(String(128))
+    marked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    original_body: Mapped[str] = mapped_column(Text)
+    english_body: Mapped[str | None] = mapped_column(Text)
+
 
 class UserMoviePreference(Base):
     """
