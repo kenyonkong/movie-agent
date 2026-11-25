@@ -6,7 +6,7 @@ from typing import Annotated, Literal, Any
 
 class MovieReviewWrite(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=512)]
-    rating: int = Field(strict=True, ge=1, le=10)
+    rating: int = Field(strict=True, ge=1, le=5)
     body: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
 
 

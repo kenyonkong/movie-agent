@@ -8,16 +8,10 @@ import type { MovieReview } from "@/types/movie";
 
 const STARS = [1, 2, 3, 4, 5];
 
-function Star({ fill }: { fill: number }) {
+function Star({ filled }: { filled: boolean }) {
   return (
-    <span aria-hidden="true" className="relative inline-block text-[#BDB76B]">
-      ☆
-      <span
-        className="absolute inset-0 overflow-hidden text-[#947215]"
-        style={{ width: `${fill * 100}%` }}
-      >
-        ★
-      </span>
+    <span aria-hidden="true" className={filled ? "text-[#947215]" : "text-[#BDB76B]"}>
+      {filled ? "★" : "☆"}
     </span>
   );
 }
@@ -74,32 +68,21 @@ function ReviewEditor({ movieId, title, review, onClose }: {
           <legend className="font-semibold">Your rating (required)</legend>
           <div className="flex w-fit text-4xl leading-none">
             {STARS.map((star) => (
-              <div key={star} className="relative px-0.5">
-                <Star fill={Math.max(0, Math.min(1, (rating - (star - 1) * 2) / 2))} />
-                {[star * 2 - 1, star * 2].map((value, half) => (
-                  <label
-                    key={value}
-                    className={`absolute inset-y-0 w-1/2 cursor-pointer rounded-sm focus-within:ring-2 focus-within:ring-[#947215] ${half ? "right-0" : "left-0"}`}
-                    title={`${value / 2} out of 5 stars`}
-                  >
-                    <input
-                      className="sr-only"
-                      type="radio"
-                      name="rating"
-                      value={value}
-                      checked={rating === value}
-                      onChange={() => setRating(value)}
-                      aria-label={`${value / 2} out of 5 stars`}
-                      required
-                    />
-                  </label>
-                ))}
-              </div>
+              <label key={star} className="cursor-pointer rounded-sm px-0.5 focus-within:ring-2 focus-within:ring-[#947215]">
+                <input
+                  className="sr-only"
+                  type="radio"
+                  name="rating"
+                  value={star}
+                  checked={rating === star}
+                  onChange={() => setRating(star)}
+                  aria-label={`${star} out of 5 stars`}
+                  required
+                />
+                <Star filled={star <= rating} />
+              </label>
             ))}
           </div>
-          <p className="text-sm text-[#706453]">
-            {rating ? `${rating / 2} out of 5 stars` : "Choose a half or full star."}
-          </p>
         </fieldset>
         <label className="block font-semibold">
           Your review
@@ -146,10 +129,10 @@ export function MovieReviewPanel({ movieId, title, review }: {
           <p className="flex items-center gap-2">
             <span className="text-2xl" aria-hidden="true">
               {STARS.map((star) => (
-                <Star key={star} fill={Math.max(0, Math.min(1, (current.rating - (star - 1) * 2) / 2))} />
+                <Star key={star} filled={star <= current.rating} />
               ))}
             </span>
-            <span>{current.rating / 2} out of 5 stars</span>
+            <span className="sr-only">{current.rating} out of 5 stars</span>
           </p>
           <p className="mt-2 whitespace-pre-wrap break-words">{current.body}</p>
         </div>

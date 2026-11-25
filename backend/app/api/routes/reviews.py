@@ -62,7 +62,8 @@ def persist_review(
         review = MovieReview(user_id=user_id, movie_id=movie_id)
         db.add(review)
     review.title = request.title
-    review.rating = request.rating
+    # Keep the existing SQLite scale so older review rows stay compatible.
+    review.rating = request.rating * 2
     review.body = request.body
     review.updated_at = datetime.now(timezone.utc)
 
@@ -84,7 +85,7 @@ def review_response(
     return MovieReviewResponse(
         movie_id=review.movie_id,
         title=review.title,
-        rating=review.rating,
+        rating=(review.rating + 1) // 2,
         body=review.body,
         updated_at=review.updated_at,
         poster_url=poster_url,

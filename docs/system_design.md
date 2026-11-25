@@ -113,6 +113,7 @@ latency, token use, and fallback metrics.
 ## Movie reviews
 
 SQLite stores one review per user and movie. The API accepts review text and
-an integer rating from 1 to 10, displayed on the frontend in half-star steps.
+an integer rating from 1 to 5, displayed as whole stars. SQLite retains the
+existing doubled scale. Legacy half-star values round up in API responses.
 My Reviews lists entries by descending update time. The frontend uses the
 existing demo identity while authentication is pending.

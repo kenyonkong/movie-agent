@@ -4,14 +4,19 @@ __pycache__/
 .pytest_cache/
 .venv/
 venv/
+# Local credentials and environment overrides
 .env
+.env.*
+!.env.example
+!.env.*.example
 
-# Backend local database
-backend/movie_agent.db
-backend/*.db
-
-# OpenAI API key
-backend/.env
+# Local SQLite databases, backups, and sidecar files
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
 
 # Node / Next.js
 node_modules/
@@ -19,25 +24,26 @@ node_modules/
 out/
 *.tsbuildinfo
 
-# Local generated work
+# Local generated work and personal exports
 output/
 tmp/
+/douban data/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Data
-backend/data/raw/*
-backend/data/processed/*
-!backend/data/raw/.gitkeep
-!backend/data/processed/.gitkeep
+# Local datasets (retain the directory placeholders)
+/backend/data/*
+!/backend/data/raw/
+!/backend/data/processed/
+/backend/data/raw/*
+/backend/data/processed/*
+!/backend/data/raw/.gitkeep
+!/backend/data/processed/.gitkeep
 
 # Vector database
 backend/chroma_db/
 
 # Logs
 *.log
-
-# Frontend env
-frontend/.env.local

@@ -12,7 +12,7 @@ The app has three routes:
 - `/reviews` — saved movie reviews, most recently updated first
 
 Recommendation and browse cards let the demo user write and edit reviews with
-a required rating from half a star to five stars.
+a required whole-star rating from one to five stars.
 
 ## Setup
 
