@@ -13,6 +13,15 @@ class TasteProfileSnapshot(Base):
     document: Mapped[dict] = mapped_column(JSON)
 
 
+class TasteExtractionCache(Base):
+    __tablename__ = "taste_extraction_cache"
+
+    user_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    review_id: Mapped[int] = mapped_column(primary_key=True)
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    observations: Mapped[list] = mapped_column(JSON)
+
+
 class MovieReview(Base):
     __tablename__ = "movie_reviews"
     __table_args__ = (

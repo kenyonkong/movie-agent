@@ -6,7 +6,7 @@ A personal movie discovery and review app built with Next.js, FastAPI, Chroma, a
 - **Browse Movies (`/movies`)** searches titles with punctuation normalization and as-you-type suggestions. Results are sorted by catalog popularity.
 - **My Reviews (`/reviews`)** shows posters, whole-star ratings from 1 to 5, and review text, with 10 entries per page. Write or edit reviews from movie cards or My Reviews. Saving a review marks the movie as watched. Imported reviews use their original Douban dates and display English translations when available.
 
-- **Taste Profile (`/taste-profile`)** shows recurring preferences inferred from the oldest 50 reviews, with supporting reviews and exceptions for each claim.
+- **Taste Profile (`/taste-profile`)** shows a current paragraph from the full review history, recurring likes and dislikes, and an interactive timeline with original review evidence.
 
 The local app uses a shared `demo_user` identity. Recommendation personalization uses feedback and watched history.
 
@@ -71,9 +71,11 @@ From `backend/` with the virtual environment active and `OPENAI_API_KEY` configu
 python -m app.scripts.build_taste_profile
 ```
 
-The script selects exactly 50 reviews, oldest first by Douban marked date or local review update time, breaking ties by review ID. The first OpenAI pass reads each full review in its original language, without star ratings, and returns observations with verbatim evidence. The second pass considers the whole cohort together and proposes up to 12 recurring preferences. Every claim must cite observations from at least two movies.
+Reviews are ordered by the Douban marked date or local review update time, with ties broken by review ID. The first pass extracts observations from the original text without star ratings and verifies each quotation. SQLite caches each extraction, including empty results. Existing 50-review observations are reused when upgrading the original experiment.
 
-The completed snapshot, including its cohort, model, observations and citations, is saved in SQLite. Open **Taste Profile** to inspect the English findings alongside their source reviews. Opening the page reads the saved snapshot. Rerunning the command replaces it after validation. Use `--model` to override the default `OPENAI_EXPLANATION_MODEL`.
+The second pass summarizes all observations available at 50 reviews and every 30 thereafter. The current summary also includes any unfinished period. Each sentence links to evidence from multiple films. Bubble area counts distinct supporting films, and each chart bar shows the share of reviews supporting the selected preference in that period. Stable chart labels make periods comparable. Observations outside those labels still inform the summary.
+
+Once initialized, saving or editing a review in the app triggers a background refresh. The page reads the last complete profile and flags a pending change. Rerun the command after a bulk import or failed refresh. Unchanged extractions and completed milestones are reused. Use `--model` to override `OPENAI_EXPLANATION_MODEL`.
 
 ## Development
 

@@ -12,13 +12,26 @@ export type Evidence = {
   review_id: number;
   quote: string;
   interpretation: string;
+  aspect: string;
+  exception: boolean;
 };
+
+export type TastePeriod = {
+  through: number;
+  partial: boolean;
+  findings: { sentence: string; supporting: number[] }[];
+};
+
+export type TasteAspect = { key: string; label: string; direction: "like" | "dislike" };
 
 export type TasteProfile = {
   generated_at: string;
   model: string;
   reviews: ProfileReview[];
   evidence: Evidence[];
+  history: TastePeriod[];
+  aspects: TasteAspect[];
+  is_current: boolean;
   preferences: {
     theme: string;
     claim: string;
