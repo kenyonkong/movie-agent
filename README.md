@@ -6,7 +6,9 @@ A personal movie discovery and review app built with Next.js, FastAPI, Chroma, a
 - **Browse Movies (`/movies`)** searches titles with punctuation normalization and as-you-type suggestions. Results are sorted by catalog popularity.
 - **My Reviews (`/reviews`)** shows posters, whole-star ratings from 1 to 5, and review text, with 10 entries per page. Write or edit reviews from movie cards or My Reviews. Saving a review marks the movie as watched. Imported reviews use their original Douban dates and display English translations when available.
 
-The local app uses a shared `demo_user` identity. Ratings and review text are available for future taste profiling. Current recommendation personalization uses feedback and watched history.
+- **Taste Profile (`/taste-profile`)** shows recurring preferences inferred from the oldest 50 reviews, with supporting reviews and exceptions for each claim.
+
+The local app uses a shared `demo_user` identity. Recommendation personalization uses feedback and watched history.
 
 ## Run locally
 
@@ -60,6 +62,18 @@ python -m app.scripts.import_douban_reviews "../douban data/douban_reviews_prepa
 Preparation keeps entries with both a valid rating and a short review, matches them to the catalog by IMDb ID, and saves the original text alongside any English translation. Translation sends review text to the configured OpenAI model and resumes from the JSON checkpoint. Use `--prepare-only` to build the match file without calling OpenAI.
 
 Back up SQLite before importing. The importer defaults to `demo_user`, skips unmatched entries and existing reviews, and preserves the original marked dates. My Reviews orders imported entries by marked date and other entries by last update, newest first.
+
+## Build the experimental taste profile
+
+From `backend/` with the virtual environment active and `OPENAI_API_KEY` configured, run:
+
+```powershell
+python -m app.scripts.build_taste_profile
+```
+
+The script selects exactly 50 reviews, oldest first by Douban marked date or local review update time, breaking ties by review ID. The first OpenAI pass reads each full review in its original language, without star ratings, and returns observations with verbatim evidence. The second pass considers the whole cohort together and proposes up to 12 recurring preferences. Every claim must cite observations from at least two movies.
+
+The completed snapshot, including its cohort, model, observations and citations, is saved in SQLite. Open **Taste Profile** to inspect the English findings alongside their source reviews. Opening the page reads the saved snapshot. Rerunning the command replaces it after validation. Use `--model` to override the default `OPENAI_EXPLANATION_MODEL`.
 
 ## Development
 

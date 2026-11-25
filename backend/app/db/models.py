@@ -1,9 +1,16 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
+
+
+class TasteProfileSnapshot(Base):
+    __tablename__ = "taste_profile_snapshots"
+
+    user_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    document: Mapped[dict] = mapped_column(JSON)
 
 
 class MovieReview(Base):

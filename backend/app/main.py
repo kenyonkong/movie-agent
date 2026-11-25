@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import feedback, health, movies, recommend, reviews
+from app.api.routes import feedback, health, movies, recommend, reviews, taste_profile
 from app.core.config import settings
 from app.db import models
 from app.db.database import create_db_tables
@@ -28,6 +28,7 @@ app.include_router(recommend.router)
 app.include_router(movies.router)
 app.include_router(feedback.router)
 app.include_router(reviews.router)
+app.include_router(taste_profile.router)
 
 @app.get("/")
 def root():

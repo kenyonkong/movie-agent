@@ -8,10 +8,18 @@ import type {
   MovieReview,
  } from "@/types/movie";
 
+import type { TasteProfile } from "@/types/taste-profile";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 const REVIEWS_URL = `${API_BASE_URL}/users/demo_user/reviews`;
+
+export async function getTasteProfile(): Promise<TasteProfile | null> {
+  const response = await fetch(`${API_BASE_URL}/users/demo_user/taste-profile`, { cache: "no-store" });
+  if (!response.ok) throw new Error("Could not load your taste profile.");
+  return response.json();
+}
 
 export async function getReviews(signal: AbortSignal): Promise<MovieReview[]> {
   const response = await fetch(REVIEWS_URL, { signal, cache: "no-store" });

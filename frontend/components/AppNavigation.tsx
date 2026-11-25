@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Recommendations" },
   { href: "/movies", label: "Browse Movies" },
   { href: "/reviews", label: "My Reviews" },
+  { href: "/taste-profile", label: "Taste Profile" },
 ];
 
 export function AppNavigation() {
@@ -14,10 +15,10 @@ export function AppNavigation() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#BDB76B]/45 bg-[#FDFBD4]/90 shadow-[0_8px_30px_rgba(91,72,30,0.08)] backdrop-blur-xl">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center justify-items-center gap-4 px-6 py-3 sm:grid-cols-[1fr_auto_1fr]">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center justify-items-center gap-4 px-4 py-3 md:grid-cols-[1fr_auto_1fr]">
         <Link
           href="/"
-          className="group flex items-center gap-3 text-lg font-bold tracking-tight text-[#352D22] transition hover:text-[#8A5B2B] sm:justify-self-start"
+          className="group flex items-center gap-3 text-lg font-bold tracking-tight text-[#352D22] transition hover:text-[#8A5B2B] md:justify-self-start"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#D4AF37] bg-[#FFFDF0] font-display text-sm text-[#826714] shadow-sm transition group-hover:bg-[#D4AF37]/20">
             MA
@@ -52,7 +53,7 @@ export function AppNavigation() {
           })}
         </nav>
 
-        <div aria-hidden="true" className="hidden sm:block" />
+        <div aria-hidden="true" className="hidden md:block" />
       </div>
     </header>
   );
